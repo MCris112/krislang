@@ -1,0 +1,4 @@
+$nombre = 32;
+
+print("test2"+"habla");
+print(" $nombre ");

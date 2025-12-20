@@ -8,55 +8,54 @@
 #include <stdlib.h>
 #include <string.h>
 
-void parseContent( ASTNode *parent, Token *children, int numChild ) {
+ASTNode *parseExpression( int deep ) {
 
-    // if (numChild == 0) {
-    //     addASTNode(parent, (ASTNode){
-    //         .type = AST_ERROR
-    //     });
-    //     return;
-    // }
-    //
-    // // Start with the first value
-    // ASTNode *left = NULL;
-    //
-    // // Parse first token
-    // if (children[0].type == TOK_TEXT) {
-    //     left = addASTNode(parent, (ASTNode){
-    //         .type = AST_TEXT,
-    //         .text = strdup(children[0].text)
-    //     });
-    // }
-    //
-    // // Now parse the rest
-    // for (int i = 1; i < numChild; i += 2) {
-    //
-    //     if (children[i].type != TOK_SUM) {
-    //         printf("Unexpected token in expression\n");
-    //         exit(1);
-    //     }
-    //
-    //     // Right operand
-    //     ASTNode right = {0};
-    //
-    //     if (children[i+1].type == TOK_TEXT) {
-    //         right = (ASTNode){
-    //             .type = AST_TEXT,
-    //             .text = strdup(children[i+1].text)
-    //         };
-    //     }
-    //
-    //     // Build CONCAT node
-    //     ASTNode *concat = addASTNode(parent, (ASTNode){
-    //         .type = AST_CONCAT
-    //     });
-    //
-    //     // Add left and right children
-    //     addASTNode(concat, *left);
-    //     addASTNode(concat, right);
-    //
-    //     // The result becomes the new left
-    //     left = concat;
-    // }
+    if ( isEnd() ) {
+        ASTNode *err = malloc(sizeof(ASTNode));
+        err->type = AST_ERROR;
+        return err;
+    }
+
+    if ( currentToken().type == TOK_PARENTESIS_OPEN) {
+        deep++;
+        nextPos();
+    }
+
+    if ( currentToken().type == TOK_PARENTESIS_CLOSE) {
+        deep--;
+        nextPos();
+    }
+
+    if ( currentToken().type == TOK_TEXT ) {
+
+        // TEXT
+        ASTNode *text = malloc(sizeof(ASTNode));
+        text->type = AST_TEXT;
+        text->text = strdup(currentToken().text);
+
+        printf( "%s \n", text->text );
+        nextPos();
+
+        // check next is sum for concat
+        if ( currentToken().type == TOK_SUM ) {
+            nextPos(); // consume '+'
+
+            ASTNode *right = parseExpression( deep );
+
+            ASTNode *concat = malloc(sizeof(ASTNode));
+            concat->type = AST_CONCAT;
+            concat->binary.left = text;
+            concat->binary.right = right;
+
+            return concat;
+        }
+
+        return text;
+    }
+
+    ASTNode *err = malloc(sizeof(ASTNode));
+    err->type = AST_ERROR;
+    nextPos();
+    return err;
 }
 

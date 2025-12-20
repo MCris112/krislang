@@ -6,7 +6,7 @@
 #define KRISLANG_CONTENT_H
 #include "parser.h"
 
-void parseContent( ASTNode *parent, Token *children, int numChild);
+ASTNode *parseExpression( int deep );
 
 
 #endif //KRISLANG_CONTENT_H

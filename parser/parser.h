@@ -9,6 +9,7 @@
 
 typedef enum {
     AST_PROGRAM, // root program
+    AST_BLOCK,
     AST_PRINT_STMT,
     AST_TEXT,
     AST_NUMBER,
@@ -20,13 +21,39 @@ typedef enum {
     AST_VARIABLE_CAST // call a var like: echo $varname;
 } ASTNodeType;
 
+typedef enum {
+    VARIABLE_TYPE_STRING,
+    VARIABLE_TYPE_INT
+} VarType;
+
 typedef struct ASTNode {
     ASTNodeType type;
-    char *text; // for strings, identifiers
-    int number; // for numbers
-    struct ASTNode *children;
-    int childCount;
-    int childCapacity;
+
+    union {
+        // Literals
+        char *text;
+        int number;
+
+        // Binary operations
+        struct {
+            struct ASTNode *left;
+            struct ASTNode *right;
+        } binary;
+
+        // Variable declaration
+        struct {
+            VarType varType;
+            char *name;
+            struct ASTNode *value;
+        } varDecl;
+
+        // Statements
+        struct {
+            struct ASTNode **children;
+            int count;
+            int capacity;
+        } block;
+    };
 } ASTNode;
 
 int getASTPosition();

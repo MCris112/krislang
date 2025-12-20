@@ -12,9 +12,15 @@ typedef enum {
     TOK_PARENTESIS_CLOSE,
 
     TOK_TEXT,
+    TOK_NUMBER,
 
     TOK_SUM, // +
 
+    TOK_VARIABLE,
+    TOK_VARIABLE_TYPE_INT,
+    TOK_VARIABLE_TYPE_STRING,
+    TOK_SEMICOLON,
+    TOK_EQUALS,
 } TokenType;
 
 typedef struct {
@@ -28,5 +34,7 @@ void parseLexer(const char *input);
 Token *getTokens();
 
 int getTokensCount();
+
+const char *tokenTypeToString(TokenType type);
 
 #endif //KRISLANG_LEXER_H

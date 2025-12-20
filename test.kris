@@ -1,4 +1,4 @@
-$nombre = 32;
+INT $sum = 32;
 
-print("test2"+"habla");
-print(" $nombre ");
+print("Hola" + " cristopher, algo que lograste XD");
+print( $sum );

@@ -4,6 +4,7 @@
 #include "lexer/lexer.h"
 #include "compiler/compiler.h"
 
+
 int main(int argc, char *argv[]) {
     FILE *input = stdin;
 

@@ -9,33 +9,29 @@
 #include "content.h"
 #include "parser.h"
 
+
 void astParsePrint(ASTNode *parent) {
-    nextPos();
+    nextPos(); // consume 'print'
 
     if ( isEnd() )
         return;
 
     if ( currentToken().type != TOK_PARENTESIS_OPEN ) {
-        printf("Unexpected token to start: %d", currentToken().type);
-        exit(EXIT_FAILURE);
-    }
-    nextPos();
-
-    // parseContent( parent );
-
-    Token *tokens = (Token *)malloc(sizeof(Token));
-    int numTokens = 0;
-
-    while (!isEnd() && currentToken().type != TOK_PARENTESIS_CLOSE) {
-        tokens[numTokens++] = currentToken();
-        nextPos();
-    }
-
-    if ( isEnd() ) {
-        printf("Unexpected token to end");
+        printf("Unexpected token to start: %s", tokenTypeToString(currentToken().type));
         exit(EXIT_FAILURE);
     }
 
-    parseContent( parent, tokens, numTokens );
-    nextPos();
-}
+    ASTNode *expr = parseExpression(0);
+
+    addASTNode( parent, *expr);
+
+    if (isEnd() || currentToken().type != TOK_PARENTESIS_CLOSE) {
+        if ( isEnd() )
+            printf("NOT_ENOUFH_CODE: ");
+
+        printf("Unexpected token to end\n");
+        exit(EXIT_FAILURE);
+    }
+
+    nextPos(); // consume ')'
+};

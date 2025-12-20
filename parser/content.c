@@ -53,6 +53,15 @@ ASTNode *parseExpression( int deep ) {
         return text;
     }
 
+    if ( currentToken().type == TOK_VARIABLE ) {
+        ASTNode *var = malloc(sizeof(ASTNode));
+        var->type = AST_VARIABLE_CAST;
+        var->text = strdup(currentToken().text);
+
+        nextPos();
+        return var;
+    }
+
     ASTNode *err = malloc(sizeof(ASTNode));
     err->type = AST_ERROR;
     nextPos();

@@ -2,7 +2,7 @@
 // Created by MCris112 on 12/18/2025.
 //
 
-#include "lexer.h"
+#include "../src/lexer/lexer.h"
 
 #include <ctype.h>
 #include <stdbool.h>
@@ -193,7 +193,7 @@ void parseLexer(const char *input) {
             addToken(
                (Token) {
                    .type = TOK_SUM,
-                   .text = "(",
+                   .text = "+",
                    .number = 0
                }
                );

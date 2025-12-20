@@ -9,7 +9,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "../lexer/lexer.h"
+#include "../src/lexer/lexer.h"
 
 char *astNodeTypeToString(ASTNodeType type){
     switch (type) {

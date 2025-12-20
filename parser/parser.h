@@ -5,7 +5,7 @@
 #ifndef KRISLANG_PARSER_H
 #define KRISLANG_PARSER_H
 #include <stdbool.h>
-#include "../lexer/lexer.h"
+#include "../src/lexer/lexer.h"
 
 typedef enum {
     AST_PROGRAM, // root program

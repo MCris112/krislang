@@ -8,7 +8,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "../lexer/lexer.h"
+#include "../src/lexer/lexer.h"
 #include "../parser/parser.h"
 
 
@@ -43,6 +43,32 @@ void declareVariable( const char *name, VarType type, VarValue value  ) {
     sym->name = strdup(name);
     sym->type = type;
     sym->value = value;
+}
+
+char *getVariableValue( char *name ) {
+    if (variableTable->count == 0) {
+        return NULL;
+    }
+
+    for (int i = 0; i < variableTable->count; i++) {
+        Symbol *sym = &variableTable->symbols[i];
+
+        if (strcmp(sym->name, name) == 0) {
+            // Convert VarValue → heap string, like compileExpr does
+            if (sym->value.type == AST_TEXT) {
+                return strdup(sym->value.text ? sym->value.text : "");
+            }
+            if (sym->value.type == AST_NUMBER) {
+                char buf[32];
+                snprintf(buf, sizeof(buf), "%d", sym->value.integer);
+                return strdup(buf);
+            }
+            return strdup("");
+        }
+    }
+
+    // Not found
+    return strdup("");  // or NULL, but then handle NULL in compileExpr
 }
 
 void printSymbolTable() {
@@ -129,6 +155,9 @@ char *compileExpr(ASTNode *node) {
             return join(left, right);
         }
 
+        case AST_VARIABLE_CAST: {
+            return getVariableValue( node->text );
+        }
         default:
             return strdup("");
     }

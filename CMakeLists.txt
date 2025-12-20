@@ -5,7 +5,7 @@ set(CMAKE_C_STANDARD 17)
 
 add_executable(KrisLang main.c
         lexer/lexer.c
-        lexer/lexer.h
+        src/lexer/lexer.h
         compiler/compiler.c
         compiler/compiler.h
         parser/parser.c

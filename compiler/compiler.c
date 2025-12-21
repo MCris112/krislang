@@ -167,29 +167,6 @@ char *compileExpr(ASTNode *node) {
 void debugToken(const Token *tok) {
     printf("TOKEN %-20s", tokenTypeToString(tok->type));
 
-    switch (tok->type) {
-
-        case TOK_TEXT:
-        case TOK_VARIABLE:
-            printf(" value=\"%s\"", tok->text);
-            break;
-
-        case TOK_NUMBER:
-            printf(" value=%d", tok->number);
-            break;
-
-        case TOK_SUM:
-        case TOK_EQUALS:
-        case TOK_SEMICOLON:
-        case TOK_PARENTESIS_OPEN:
-        case TOK_PARENTESIS_CLOSE:
-            printf(" symbol=\"%s\"", tok->text);
-            break;
-
-        default:
-            break;
-    }
-
     printf("\n");
 }
 
@@ -218,24 +195,24 @@ void runCompiler() {
         switch ( child->type ) {
             case AST_VARIABLE_DEFINITION:
 
-                if ( child->varDecl.value->type == AST_TEXT ) {
-                    declareVariable( child->varDecl.name, child->varDecl.varType, (VarValue){
-                        .type =  child->varDecl.value->type,
-                        .text =  child->varDecl.value->text,
-                    } );
-                }
-
-                if ( child->varDecl.value->type == AST_NUMBER ) {
-                    declareVariable( child->varDecl.name, child->varDecl.varType, (VarValue){
-                        .type =  child->varDecl.value->type,
-                        .integer =  child->varDecl.value->number,
-                    } );
-                }
+                // if ( child->varDecl.value->type == AST_TEXT ) {
+                //     declareVariable( child->varDecl.name, child->varDecl.varType, (VarValue){
+                //         .type =  child->varDecl.value->type,
+                //         .text =  child->varDecl.value->text,
+                //     } );
+                // }
+                //
+                // if ( child->varDecl.value->type == AST_NUMBER ) {
+                //     declareVariable( child->varDecl.name, child->varDecl.varType, (VarValue){
+                //         .type =  child->varDecl.value->type,
+                //         .integer =  child->varDecl.value->number,
+                //     } );
+                // }
                 break;
             case AST_PRINT_STMT:
-                char *s = compileExpr( child->block.children[0] );
-                printf("%s\n", s);
-                free(s);
+                // char *s = compileExpr( child->block.children[0] );
+                // printf("%s\n", s);
+                // free(s);
 
                 break;
             default:

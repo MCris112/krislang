@@ -16,12 +16,12 @@ ASTNode *parseExpression( int deep ) {
         return err;
     }
 
-    if ( currentToken().type == TOK_PARENTESIS_OPEN) {
+    if ( currentToken().type == TOK_PARENTHESIS_OPEN) {
         deep++;
         nextPos();
     }
 
-    if ( currentToken().type == TOK_PARENTESIS_CLOSE) {
+    if ( currentToken().type == TOK_PARENTHESIS_CLOSE) {
         deep--;
         nextPos();
     }
@@ -37,7 +37,7 @@ ASTNode *parseExpression( int deep ) {
         nextPos();
 
         // check next is sum for concat
-        if ( currentToken().type == TOK_SUM ) {
+        if ( currentToken().type == TOK_PLUS ) {
             nextPos(); // consume '+'
 
             ASTNode *right = parseExpression( deep );

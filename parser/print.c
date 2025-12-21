@@ -16,7 +16,7 @@ void astParsePrint(ASTNode *parent) {
     if ( isEnd() )
         return;
 
-    if ( currentToken().type != TOK_PARENTESIS_OPEN ) {
+    if ( currentToken().type != TOK_PARENTHESIS_OPEN ) {
         printf("Unexpected token to start: %s", tokenTypeToString(currentToken().type));
         exit(EXIT_FAILURE);
     }
@@ -25,7 +25,7 @@ void astParsePrint(ASTNode *parent) {
 
     addASTNode( parent, *expr);
 
-    if (isEnd() || currentToken().type != TOK_PARENTESIS_CLOSE) {
+    if (isEnd() || currentToken().type != TOK_PARENTHESIS_CLOSE) {
         if ( isEnd() )
             printf("NOT_ENOUFH_CODE: ");
 

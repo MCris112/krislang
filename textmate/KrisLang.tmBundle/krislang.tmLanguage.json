@@ -1,0 +1,62 @@
+{
+  "name": "KrisLang",
+  "scopeName": "source.kris",
+  "patterns": [
+    { "include": "#keywords" },
+    { "include": "#types" },
+    { "include": "#numbers" },
+    { "include": "#strings" },
+    { "include": "#comments" }
+  ],
+  "repository": {
+    "keywords": {
+      "patterns": [
+        {
+          "name": "keyword.control.kris",
+          "match": "\\b(if|else|while|for|return|VOID)\\b"
+        }
+      ]
+    },
+    "types": {
+      "patterns": [
+        {
+          "name": "storage.type.kris",
+          "match": "\\b(INT|FLOAT|STRING|BOOLEAN|CHAR|VOID)\\b"
+        }
+      ]
+    },
+    "numbers": {
+      "patterns": [
+        {
+          "name": "constant.numeric.kris",
+          "match": "\\b\\d+(\\.\\d+)?\\b"
+        }
+      ]
+    },
+    "strings": {
+      "patterns": [
+        {
+          "name": "string.quoted.double.kris",
+          "begin": "\"",
+          "end": "\""
+        }
+      ]
+    },
+    "comments": {
+      "patterns": [
+        {
+          "name": "comment.line.double-slash.kris",
+          "match": "//.*$"
+        }
+      ]
+    },
+    "fallback": {
+      "patterns": [
+        {
+          "name": "meta.default.kris",
+          "match": ".+"
+        }
+      ]
+    }
+  }
+}

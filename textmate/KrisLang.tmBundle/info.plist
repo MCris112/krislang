@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+ "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>name</key>
+    <string>KrisLang</string>
+    <key>uuid</key>
+    <string>bf8b08ce-9805-4016-8741-ec2805f96b3c</string>
+    <key>patterns</key>
+    <array>
+        <string>krislang.tmLanguage.json</string>
+    </array>
+</dict>
+</plist>

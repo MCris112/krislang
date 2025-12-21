@@ -4,7 +4,7 @@ project(KrisLang C)
 set(CMAKE_C_STANDARD 17)
 
 add_executable(KrisLang main.c
-        lexer/lexer.c
+        src/lexer/lexer.c
         src/lexer/lexer.h
         compiler/compiler.c
         compiler/compiler.h

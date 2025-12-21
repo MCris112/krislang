@@ -56,6 +56,8 @@ typedef struct ASTNode {
     };
 } ASTNode;
 
+void syntaxError(const char *message, int line, int column);
+
 int getASTPosition();
 
 void nextPos();

@@ -11,6 +11,16 @@
 
 #include "../src/lexer/lexer.h"
 
+int syntax_error_count = 0;
+
+void syntaxError(const char *message, int line, int column) {
+    fprintf(stderr,
+        "Syntax error at %d:%d - %s\n",
+        line, column, message
+    );
+    syntax_error_count++;
+}
+
 char *astNodeTypeToString(ASTNodeType type){
     switch (type) {
         case AST_PROGRAM:
@@ -114,14 +124,14 @@ ASTNode getAST() {
     while (!isEnd()) {
         Token tok = currentToken();
 
-        if (tok.type == TOK_PRINT) {
-
-            ASTNode *printNode = addASTNode(&parent, (ASTNode){
-              .type = AST_PRINT_STMT,
-            });
-
-            astParsePrint(printNode);
-        }
+        // if (tok.type == TOK_PRINT) {
+        //
+        //     ASTNode *printNode = addASTNode(&parent, (ASTNode){
+        //       .type = AST_PRINT_STMT,
+        //     });
+        //
+        //     astParsePrint(printNode);
+        // }
 
         if ( tok.type == TOK_VARIABLE_TYPE_INT ||   tok.type == TOK_VARIABLE_TYPE_STRING) {
 
@@ -131,8 +141,8 @@ ASTNode getAST() {
             Token varValue = currentToken(); nextPos();
 
             if (varName.type != TOK_VARIABLE || equals.type != TOK_EQUALS) {
-                fprintf(stderr, "Invalid variable declaration\n");
-                abort();
+                syntaxError( "Variable name expected", varName.line, varName.column );
+                continue;
             }
 
             ASTNode *valueNode = malloc(sizeof(ASTNode));
@@ -238,6 +248,14 @@ ASTNode getAST() {
         }
 
         nextPos();
+    }
+
+    if (syntax_error_count > 0) {
+        fprintf(stderr,
+            "\nCompilation failed with %d syntax error(s).\n",
+            syntax_error_count
+        );
+        exit(EXIT_FAILURE);
     }
 
     return parent;

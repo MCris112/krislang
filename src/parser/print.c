@@ -17,7 +17,6 @@ void astParsePrint(ASTNode *parent) {
         return;
 
     if ( currentToken().type != TOK_PARENTHESIS_OPEN ) {
-        printf("Unexpected token to start: %s", tokenTypeToString(currentToken().type));
         exit(EXIT_FAILURE);
     }
 

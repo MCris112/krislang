@@ -17,7 +17,9 @@ typedef struct {
     ASTNodeType type;
     union {
         char *text;
-        int integer;
+        int number;
+        double decimal;
+        bool boolean;
     };
 } VarValue;
 

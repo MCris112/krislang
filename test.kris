@@ -1,13 +1,14 @@
+INT $sum = 32 + 32 + 1;
 // Variables text type
-STRING(32) $text = "Something here"; // fixed memory size
-STRING $autoText = "Something here"; //autosize memory
-
-// Variables int type
-INT(8) $sum = 32; // fixed memory size
-INT $b = 32; // int type but autosize in memory
-
-CHAR $char = 'a';
-BOOLEAN $true = TRUE;
+//STRING(32) $text = "Something here"; // fixed memory size
+//STRING $autoText = "Something here"; //autosize memory
+//
+//// Variables int type
+//INT(8) $sum = 32; // fixed memory size
+//INT $b = 32; // int type but autosize in memory
+//
+//CHAR $char = 'a';
+//BOOLEAN $true = TRUE;
 
 
 
@@ -15,15 +16,16 @@ BOOLEAN $true = TRUE;
 //FLOAT<2> $something = 33.3; // fixed  size (left , right: auto)
 //FLOAT<_,1> $something = 33.3; // fixed  size (left:auto , right: fixed)
 //FLOAT<2,1> $something = 33.3; // fixed memory size (left , right)
-FLOAT(32) $something = 33.3; // fixed memory size in general, doesnt matter if have 19 reals and 2 decimals, always memory size is same
-FLOAT $something2 = 33.3; //autosize memory
-
-VOID greetings()
-{
-    print("Hello here in function");
-}
-
-greetings();
-
-print("Hola" + " cristopher, algo que lograste XD");
-print( $sum );
+//FLOAT(32) $something = 33.3; // fixed memory size in general, doesnt matter if have 19 reals and 2 decimals, always memory size is same
+//FLOAT $something2 = 33.3; //autosize memory
+//
+//VOID greetings()
+//{
+//    print("Hello here in function");
+//    STRING $test = "TEST here";
+//}
+//
+//greetings();
+//
+//print("Hola" + " cristopher, algo que lograste XD");
+//print( $sum );

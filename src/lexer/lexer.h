@@ -111,6 +111,4 @@ Token *getTokens();
 
 int getTokensCount();
 
-const char *tokenTypeToString(TokenType type);
-
 #endif //KRISLANG_LEXER_H

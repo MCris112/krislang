@@ -5,18 +5,18 @@
 #ifndef KRISLANG_PARSER_H
 #define KRISLANG_PARSER_H
 #include <stdbool.h>
-#include "../src/lexer/lexer.h"
+#include "../lexer/lexer.h"
 
 typedef enum {
     AST_PROGRAM, // root program
     AST_BLOCK,
     AST_PRINT_STMT,
 
-    AST_BOOLEAN,
     AST_TEXT,
-    AST_CHAR,
     AST_NUMBER,
     AST_NUMBER_DECIMAL,
+    AST_BOOLEAN,
+    AST_CHAR,
     AST_ERROR,
 
     AST_CONCAT, // CONCAT CERTAIN VALUES
@@ -27,7 +27,10 @@ typedef enum {
 
 typedef enum {
     VARIABLE_TYPE_STRING,
-    VARIABLE_TYPE_INT
+    VARIABLE_TYPE_INT,
+    VARIABLE_TYPE_FLOAT,
+    VARIABLE_TYPE_BOOLEAN,
+    VARIABLE_TYPE_CHAR,
 } VarType;
 
 typedef struct ASTNode {
@@ -77,7 +80,7 @@ ASTNode getAST();
 
 void astParsePrint(ASTNode *parent);
 
-void showAST(ASTNode *root);
+void parserPrintAST(ASTNode *root);
 
 char *astNodeTypeToString(ASTNodeType type);
 

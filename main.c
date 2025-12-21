@@ -2,7 +2,7 @@
 #include <stdlib.h>
 
 #include "src/lexer/lexer.h"
-#include "compiler/compiler.h"
+#include "src/compiler/compiler.h"
 
 
 int main(int argc, char *argv[]) {

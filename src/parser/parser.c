@@ -7,9 +7,9 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 
-#include "../src/lexer/lexer.h"
+#include "../debug.h"
+#include "../compiler/expression.h"
 
 int syntax_error_count = 0;
 
@@ -162,13 +162,11 @@ ASTNode *evalVariableDefinitionValue(Token token ) {
     return node;
 }
 
-bool evalVariableDefinition( ASTNode *parent, TokenType type) {
+bool evalVariableDefinition( ASTNode *parent, TokenType type, VarType varType) {
     Token tok = currentToken();
     if ( tok.type != type) {
         return false;
     }
-
-    printf("CURRENT TOKEN: %s \n", tokenTypeToString(tok.type));
 
      nextPos(); // skip TYPE
 
@@ -210,13 +208,18 @@ bool evalVariableDefinition( ASTNode *parent, TokenType type) {
         return false;
 
     // Parse value
-    Token varValue = currentToken(); nextPos();
-    ASTNode *valueNode = evalVariableDefinitionValue(varValue);
+    // Token varValue = currentToken(); nextPos();
+    ASTNode *valueNode = parseExpression(0);
+
+    // ASTNode *valueNode = evalVariableDefinitionValue(varValue);
     if (!valueNode) {
         return false;
     }
 
     if ( currentToken().type != TOK_SEMICOLON) {
+        parserPrintASTNode(valueNode, 0);
+
+        printf("CURRENCT TOKEN: %s \n", lexerTokenToString(currentToken().type ));
         syntaxError( "Semicolon expected", currentToken() );
         return false;
     }
@@ -226,7 +229,7 @@ bool evalVariableDefinition( ASTNode *parent, TokenType type) {
     ASTNode definition = (ASTNode) {
         .type = AST_VARIABLE_DEFINITION,
         .varDecl = {
-            .varType = VARIABLE_TYPE_STRING,
+            .varType = varType,
             .name =varName.text,
             .value =  valueNode,
             .size = size
@@ -253,23 +256,23 @@ ASTNode getAST() {
     while (!isEnd()) {
         Token tok = currentToken();
 
-        if(evalVariableDefinition( &parent, TOK_VARIABLE_TYPE_STRING )) {
+        if(evalVariableDefinition( &parent, TOK_VARIABLE_TYPE_STRING, VARIABLE_TYPE_STRING )) {
             continue;
         }
 
-        if(evalVariableDefinition( &parent, TOK_VARIABLE_TYPE_INT )) {
+        if(evalVariableDefinition( &parent, TOK_VARIABLE_TYPE_INT, VARIABLE_TYPE_INT )) {
             continue;
         }
 
-        if(evalVariableDefinition( &parent, TOK_VARIABLE_TYPE_BOOLEAN )) {
+        if(evalVariableDefinition( &parent, TOK_VARIABLE_TYPE_BOOLEAN, VARIABLE_TYPE_BOOLEAN )) {
             continue;
         }
 
-        if(evalVariableDefinition( &parent, TOK_VARIABLE_TYPE_FLOAT )) {
+        if(evalVariableDefinition( &parent, TOK_VARIABLE_TYPE_FLOAT, VARIABLE_TYPE_FLOAT )) {
             continue;
         }
 
-        if(evalVariableDefinition( &parent, TOK_VARIABLE_TYPE_CHAR )) {
+        if(evalVariableDefinition( &parent, TOK_VARIABLE_TYPE_CHAR, VARIABLE_TYPE_CHAR )) {
             continue;
         }
 
@@ -285,56 +288,4 @@ ASTNode getAST() {
     }
 
     return parent;
-}
-void showASTNode(ASTNode *node, int indent) {
-    // Print indentation
-    for (int i = 0; i < indent; i++) {
-        printf("  ");
-    }
-
-    // Print node type
-    printf("%s", astNodeTypeToString(node->type));
-
-    // Extra info
-    if (node->type == AST_TEXT && node->text) {
-        printf(" (\"%s\")", node->text);
-    }
-
-    if (node->type == AST_NUMBER) {
-        printf(" (%d)", node->number);
-    }
-
-    if (node->type == AST_VARIABLE_DEFINITION) {
-        printf(" (%s)", node->varDecl.name);
-    }
-
-    printf("\n");
-
-    // Recurse depending on node type
-    switch (node->type) {
-
-        case AST_PROGRAM:
-        case AST_PRINT_STMT:
-            for (int i = 0; i < node->block.count; i++) {
-                showASTNode(node->block.children[i], indent + 1);
-            }
-            break;
-
-        case AST_VARIABLE_DEFINITION:
-            if (node->varDecl.value) {
-                showASTNode(node->varDecl.value, indent + 1);
-            }
-            break;
-
-        default:
-            // Leaf nodes: nothing to recurse into
-            break;
-    }
-}
-
-
-void showAST(ASTNode *root) {
-    printf("=== AST ===\n");
-    showASTNode(root, 0);
-    printf("===========\n");
 }

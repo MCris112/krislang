@@ -11,8 +11,12 @@ typedef enum {
     AST_PROGRAM, // root program
     AST_BLOCK,
     AST_PRINT_STMT,
+
+    AST_BOOLEAN,
     AST_TEXT,
+    AST_CHAR,
     AST_NUMBER,
+    AST_NUMBER_DECIMAL,
     AST_ERROR,
 
     AST_CONCAT, // CONCAT CERTAIN VALUES
@@ -33,6 +37,8 @@ typedef struct ASTNode {
         // Literals
         char *text;
         int number;
+        double decimal;
+        bool boolean;
 
         // Binary operations
         struct {
@@ -45,6 +51,7 @@ typedef struct ASTNode {
             VarType varType;
             char *name;
             struct ASTNode *value;
+            int size; /* // -1 means autosize */
         } varDecl;
 
         // Statements
@@ -56,7 +63,7 @@ typedef struct ASTNode {
     };
 } ASTNode;
 
-void syntaxError(const char *message, int line, int column);
+void syntaxError( const char *message, Token token );
 
 int getASTPosition();
 

@@ -4,8 +4,10 @@
 
 #ifndef KRISLANG_LEXER_H
 #define KRISLANG_LEXER_H
+#include <stdbool.h>
 
 typedef enum {
+    TOK_ERROR,
 
     // VARIABLES
     TOK_VARIABLE_TYPE_INT,
@@ -80,8 +82,10 @@ typedef enum {
     // LITERALS
     //---------------------------
     TOK_TEXT,
+    TOK_CHAR,
     TOK_NUMBER,
     TOK_NUMBER_DECIMAL,
+    TOK_LITERAL_BOOLEAN,
 
     TOK_WHITESPACE,
     TOK_COMMENT_NORMAL // -> //
@@ -97,6 +101,7 @@ typedef struct {
         char *text;   // used for STRING (and keyword literals), NULL for numbers unless you want text
         int number;   // used for NUMBER
         double decimal;
+        bool boolean;
     };
 } Token;
 

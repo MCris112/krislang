@@ -13,10 +13,10 @@
 
 int syntax_error_count = 0;
 
-void syntaxError(const char *message, int line, int column) {
+void syntaxError(const char *message, Token token) {
     fprintf(stderr,
         "Syntax error at %d:%d - %s\n",
-        line, column, message
+        token.line, token.column, message
     );
     syntax_error_count++;
 }
@@ -106,7 +106,136 @@ ASTNode *addASTNode(ASTNode *parent, ASTNode child) {
     return node;
 }
 
+bool evalExpectedToken(Token token, TokenType expected, char *message ) {
+    if ( token.type != expected) {
+        if ( !message )
+            message = "Sintaxis unexpected, please check the code";
 
+        syntaxError( message, token );
+        return false;
+    }
+
+    return true;
+}
+
+ASTNode *evalVariableDefinitionValue(Token token ) {
+    ASTNode *node = malloc(sizeof(ASTNode));
+    if (!node) { perror("malloc"); exit(EXIT_FAILURE); }
+
+    switch (token.type) {
+        case TOK_NUMBER:
+            *node = ( ASTNode ){
+                .type = AST_NUMBER,
+                .number = token.number
+            };
+            break;
+        case TOK_TEXT:
+            *node = ( ASTNode ){
+                .type = AST_TEXT,
+                .text =  token.text
+            };
+            break;
+        case TOK_NUMBER_DECIMAL:
+            *node = ( ASTNode ){
+                .type = AST_NUMBER_DECIMAL,
+                .decimal =  token.decimal
+            };
+            break;
+        case TOK_CHAR:
+            *node = ( ASTNode ){
+                .type = AST_CHAR,
+                .text =  token.text
+            };
+            break;
+        case TOK_LITERAL_BOOLEAN:
+            *node = ( ASTNode ){
+                .type = AST_BOOLEAN,
+                .boolean =  token.boolean
+            };
+            break;
+        default:
+            syntaxError( "The value of the var was not expected", token );
+            free(node);
+            return NULL;
+    }
+
+    return node;
+}
+
+bool evalVariableDefinition( ASTNode *parent, TokenType type) {
+    Token tok = currentToken();
+    if ( tok.type != type) {
+        return false;
+    }
+
+    printf("CURRENT TOKEN: %s \n", tokenTypeToString(tok.type));
+
+     nextPos(); // skip TYPE
+
+    Token varName  = currentToken();
+    if ( varName.type != TOK_PARENTHESIS_OPEN  && varName.type != TOK_VARIABLE ) {
+        syntaxError( "Variable name/size expected", varName );
+        nextPos();
+        return false;
+    }
+
+    int size = -1;
+
+    // Optional (size)
+
+    if (varName.type == TOK_PARENTHESIS_OPEN) {
+        nextPos(); // SKIP '('
+
+        Token sizeTok = currentToken();
+        if (!evalExpectedToken(sizeTok, TOK_NUMBER, "Expected size inside STRING(...)"))
+            return false;
+
+        size = sizeTok.number;
+        nextPos();
+
+        if (!evalExpectedToken(currentToken(), TOK_PARENTHESIS_CLOSE, "Expected ')' after size"))
+            return false;
+
+        nextPos(); // skip ')'
+    }
+
+    // Now expect variable name
+    varName  = currentToken(); nextPos();
+    if (  !evalExpectedToken(varName, TOK_VARIABLE, "Variable name expected") )
+        return false;
+
+    // Expect '='
+    Token equals   = currentToken(); nextPos();
+    if ( !evalExpectedToken(equals, TOK_EQUALS, "Expected '='") )
+        return false;
+
+    // Parse value
+    Token varValue = currentToken(); nextPos();
+    ASTNode *valueNode = evalVariableDefinitionValue(varValue);
+    if (!valueNode) {
+        return false;
+    }
+
+    if ( currentToken().type != TOK_SEMICOLON) {
+        syntaxError( "Semicolon expected", currentToken() );
+        return false;
+    }
+
+    nextPos();
+
+    ASTNode definition = (ASTNode) {
+        .type = AST_VARIABLE_DEFINITION,
+        .varDecl = {
+            .varType = VARIABLE_TYPE_STRING,
+            .name =varName.text,
+            .value =  valueNode,
+            .size = size
+        }
+    };
+
+    addASTNode(parent, definition);
+    return true;
+}
 ASTNode getAST() {
 
     ASTNode parent = {
@@ -124,126 +253,23 @@ ASTNode getAST() {
     while (!isEnd()) {
         Token tok = currentToken();
 
-        // if (tok.type == TOK_PRINT) {
-        //
-        //     ASTNode *printNode = addASTNode(&parent, (ASTNode){
-        //       .type = AST_PRINT_STMT,
-        //     });
-        //
-        //     astParsePrint(printNode);
-        // }
-
-        if ( tok.type == TOK_VARIABLE_TYPE_INT ||   tok.type == TOK_VARIABLE_TYPE_STRING) {
-
-            Token varType  = currentToken(); nextPos();
-            Token varName  = currentToken(); nextPos();
-            Token equals   = currentToken(); nextPos();
-            Token varValue = currentToken(); nextPos();
-
-            if (varName.type != TOK_VARIABLE || equals.type != TOK_EQUALS) {
-                syntaxError( "Variable name expected", varName.line, varName.column );
-                continue;
-            }
-
-            ASTNode *valueNode = malloc(sizeof(ASTNode));
-            if (!valueNode) { perror("malloc"); exit(EXIT_FAILURE); }
-
-            if (varType.type == TOK_VARIABLE_TYPE_STRING) {
-                *valueNode = (ASTNode){
-                    .type = AST_TEXT,
-                    .text = varValue.text
-                };
-            } else {
-                *valueNode = (ASTNode){
-                    .type = AST_NUMBER,
-                    .number = varValue.number
-                };
-            }
-
-            ASTNode definition = {
-                .type = AST_VARIABLE_DEFINITION,
-                .varDecl = {
-                    .varType = (varType.type == TOK_VARIABLE_TYPE_STRING)
-                                 ? VARIABLE_TYPE_STRING
-                                 : VARIABLE_TYPE_INT,
-                    .name = varName.text,
-                    .value = valueNode
-                }
-            };
-
-            addASTNode(&parent, definition);
+        if(evalVariableDefinition( &parent, TOK_VARIABLE_TYPE_STRING )) {
             continue;
-            // if ( tokens[getASTPosition()+1].type != TOK_VARIABLE ) {
-            //     perror("Is type and?");
-            //     abort();
-            // }
-            //
-            // if ( tokens[getASTPosition()+2].type != TOK_EQUALS ) {
-            //     perror("Variable is not set");
-            //     abort();
-            // }
-            //
-            //
-            // Token varType = tokens[getASTPosition()];
-            // Token varName = tokens[getASTPosition()+1];
-            // nextPos();
-            // Token varValue = tokens[getASTPosition()+3];
-            // nextPos();
-            //
-            // ASTNode *valueNode = malloc(sizeof(ASTNode));
-            //
-            // if (varType.type == TOK_VARIABLE_TYPE_STRING) {
-            //     *valueNode = (ASTNode){
-            //         .type = AST_TEXT,
-            //         .text = varValue.text
-            //     };
-            // } else {
-            //     *valueNode = (ASTNode){
-            //         .type = AST_NUMBER,
-            //         .number = varValue.number
-            //     };
-            // }
-            //
-            //
-            // ASTNode definition = {
-            //     .type = AST_VARIABLE_DEFINITION,
-            //     .varDecl = {
-            //         .varType = (varType.type == TOK_VARIABLE_TYPE_STRING)
-            //                      ? VARIABLE_TYPE_STRING
-            //                      : VARIABLE_TYPE_INT,
-            //         .name = varName.text,
-            //         .value = valueNode   // ✅ ASTNode*
-            //     }
-            // };
-            //
-            //
-            // addASTNode(&parent, definition);
+        }
 
-            // VarValue *content;
-            //
-            // if ( varType.type == TOK_VARIABLE_TYPE_STRING ) {
-            //     content = malloc( sizeof(VarValue) );
-            //     content->type = AST_TEXT;
-            //     content->text = varvalue.text;
-            //
-            //     declareVariable( varname.text, VARIABLE_TYPE_STRING, *content );
-            // }
-            //
-            // if ( varType.type == TOK_VARIABLE_TYPE_INT ) {
-            //     content = malloc( sizeof(VarValue) );
-            //     content->type = AST_NUMBER;
-            //     content->integer = varvalue.number;
-            //
-            //     declareVariable( varname.text, VARIABLE_TYPE_INT, *content );
-            //
-            // }
-            //
-            // if ( !content ) {
-            //     perror("Variable is not definied");
-            //     abort();
-            // }
+        if(evalVariableDefinition( &parent, TOK_VARIABLE_TYPE_INT )) {
+            continue;
+        }
 
+        if(evalVariableDefinition( &parent, TOK_VARIABLE_TYPE_BOOLEAN )) {
+            continue;
+        }
 
+        if(evalVariableDefinition( &parent, TOK_VARIABLE_TYPE_FLOAT )) {
+            continue;
+        }
+
+        if(evalVariableDefinition( &parent, TOK_VARIABLE_TYPE_CHAR )) {
             continue;
         }
 

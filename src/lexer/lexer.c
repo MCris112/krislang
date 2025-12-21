@@ -228,6 +228,84 @@ void parseLexer(const char *input) {
             continue;
         }
 
+        //---------------------------
+        // Parse Char
+        //---------------------------
+        if ( *pos == '\'') {
+            int startColumn = currentColumn;
+            pos++; currentColumn++; // skip opening '
+
+            if (*pos == '\0') {
+                addToken((Token){
+                    .type = TOK_ERROR,
+                    .text = "Unterminated char literal",
+                    .line = currentLine,
+                    .column = startColumn
+                });
+                return;
+            }
+
+            char value = *pos; // read the character
+            pos++; currentColumn++;
+
+            // Expect closing '
+            if (*pos != '\'') {
+                addToken((Token){
+                    .type = TOK_ERROR,
+                    .text = "Expected closing ' for char literal",
+                    .line = currentLine,
+                    .column = startColumn
+                });
+                continue;
+            }
+
+            pos++; currentColumn++; // skip closing '
+
+            // Store char as a string of length 1
+            char *text = malloc(2);
+            text[0] = value;
+            text[1] = '\0';
+
+            addToken((Token){
+                .type = TOK_CHAR,
+                .text = text,
+                .line = currentLine,
+                .column = startColumn
+            });
+
+            continue;
+        }
+
+        //---------------------------
+        // Parse TRUE | FALSE
+        //---------------------------
+        if ( strncmp( pos, "TRUE", 4) == 0 && !isalnum(pos[4] ) ) {
+
+            addToken( (Token){
+                .type = TOK_LITERAL_BOOLEAN,
+                .boolean = true,
+                .line = currentLine,
+                .column = currentColumn
+            } );
+
+            pos +=4;
+            currentColumn +=4;
+            continue;
+        }
+
+        if ( strncmp( pos, "FALSE", 5) == 0 && !isalnum(pos[5]) ) {
+
+            addToken( (Token){
+                .type = TOK_LITERAL_BOOLEAN,
+                .boolean = false,
+                .line = currentLine,
+                .column = currentColumn
+            } );
+
+            pos +=5;
+            currentColumn +=5;
+            continue;
+        }
 
         if (*pos == ';') {
             addToken((Token){

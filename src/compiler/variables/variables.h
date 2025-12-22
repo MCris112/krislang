@@ -10,6 +10,10 @@ void initSymbolTable(SymbolTable **variableTable);
 
 void declareVariableByASTNode(SymbolTable *variableTable, ASTNode *node);
 
-char *getVariableValue(SymbolTable *variableTable,char *name);
+VarValue *getVariableValue(SymbolTable *variableTable,char *name);
+
+ASTNode *astNodeFromVarValue(const VarValue *value);
+
+ASTNode *getVariableNode(SymbolTable *table, const char *name);
 
 #endif //KRISLANG_VARIABLES_H

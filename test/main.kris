@@ -1,0 +1,6 @@
+STRING $texto = "Hello world" + " Cristopher";
+
+INT $sum = 4 + 1;
+
+//print( $sum + 5 );
+print( $sum + " por el culo te la inco" );

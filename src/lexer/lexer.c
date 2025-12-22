@@ -10,6 +10,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "../debug.h"
+
 // For error lines
 int currentLine = 1;
 int currentColumn = 1;
@@ -546,5 +548,7 @@ void parseLexer(const char *input) {
         pos++;
         currentColumn++;
     }
+
+    lexerPrintTokens( tokens, tokenCount );
 }
 

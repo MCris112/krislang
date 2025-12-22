@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "src/debug.h"
 #include "src/lexer/lexer.h"
 #include "src/compiler/compiler.h"
 
@@ -41,7 +42,10 @@ int main(int argc, char *argv[]) {
     }
 
     // Now you have the full source code
+
+
     parseLexer(buffer);
+
     runCompiler();
 
     free(buffer);

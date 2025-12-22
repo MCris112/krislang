@@ -154,6 +154,12 @@ void parserPrintASTNode(ASTNode *node, int indent) {
                 parserPrintASTNode(node->binary.right, indent + 1);
             }
             break;
+        case AST_FUNCTION_CALL:
+            printf(" (%s)\n", node->funcCall.name);
+            for (int i = 0; i < node->funcCall.count; i++) {
+                parserPrintASTNode(node->funcCall.arguments[i], indent + 1);
+            }
+            break;
         default:
             // Leaf nodes: nothing to recurse into
             break;

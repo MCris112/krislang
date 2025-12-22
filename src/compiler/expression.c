@@ -8,6 +8,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "variables/variables.h"
+
 // bool evalVariableDefinition() {
 //     ASTNode *node = malloc(sizeof(ASTNode));
 //     if (!node) {
@@ -131,7 +133,7 @@ ASTNode *parseExpression(int deep ) {
         var->text = strdup(currentToken().text);
 
         nextPos();
-        return var;
+        return checkConcat(var, deep);
     }
 
     if ( currentToken().type == TOK_SEMICOLON) {
@@ -147,7 +149,7 @@ ASTNode *parseExpression(int deep ) {
     return err;
 }
 
-ASTNode *compileExpression(ASTNode *node) {
+ASTNode *compileExpression(SymbolTable *symbolTable, ASTNode *node) {
 
     if (!node) return NULL;
 
@@ -160,9 +162,12 @@ ASTNode *compileExpression(ASTNode *node) {
         case AST_BOOLEAN:
             return node; // literal
 
+        case AST_VARIABLE_CAST:
+            return getVariableNode( symbolTable , node->text );
+            break;
         case AST_CONCAT: {
-            ASTNode *left = compileExpression(node->binary.left);
-            ASTNode *right = compileExpression(node->binary.right);
+            ASTNode *left = compileExpression(symbolTable, node->binary.left);
+            ASTNode *right = compileExpression(symbolTable, node->binary.right);
 
             ASTNode *result = malloc(sizeof(ASTNode));
             memset(result, 0, sizeof(ASTNode));
@@ -215,6 +220,14 @@ ASTNode *compileExpression(ASTNode *node) {
                 return result;
             }
 
+
+            if (left->type == AST_NUMBER && right->type == AST_TEXT) {
+                result->type = AST_TEXT;
+                char buffer[64];
+                snprintf(buffer, sizeof(buffer), "%d%s", left->number, right->text);
+                result->text = strdup(buffer);
+                return result;
+            }
             // TODO: handle string concat, variable concat, etc.
 
             // Unsupported combination

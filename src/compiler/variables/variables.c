@@ -20,7 +20,7 @@ void initSymbolTable(SymbolTable **variableTable) {
 void declareVariableByASTNode(SymbolTable *variableTable, ASTNode *node) {
     VarType type = node->varDecl.varType;
 
-    ASTNode *valueNode = compileExpression(node->varDecl.value);
+    ASTNode *valueNode = compileExpression( variableTable, node->varDecl.value);
 
     VarValue value = {.type = valueNode->type};
     bool abort = false;
@@ -79,28 +79,88 @@ void declareVariableByASTNode(SymbolTable *variableTable, ASTNode *node) {
     variableTable->symbols[variableTable->count++] = symbol;
 }
 
-char *getVariableValue(SymbolTable *variableTable, char *name) {
-    if (variableTable->count == 0) {
-        return NULL;
-    }
+// char *getVariableValue(SymbolTable *variableTable, char *name) {
+//     if (variableTable->count == 0) {
+//         return NULL;
+//     }
+//
+//     for (int i = 0; i < variableTable->count; i++) {
+//         Symbol *sym = &variableTable->symbols[i];
+//
+//         if (strcmp(sym->name, name) == 0) {
+//             // Convert VarValue → heap string, like compileExpr does
+//             if (sym->value.type == AST_TEXT) {
+//                 return strdup(sym->value.text ? sym->value.text : "");
+//             }
+//             if (sym->value.type == AST_NUMBER) {
+//                 char buf[32];
+//                 snprintf(buf, sizeof(buf), "%d", sym->value.number);
+//                 return strdup(buf);
+//             }
+//             return strdup("");
+//         }
+//     }
+//
+//     // Not found
+//     return strdup(""); // or NULL, but then handle NULL in compileExpr
+// }
 
+VarValue *getVariableValue(SymbolTable *variableTable, char *name) {
     for (int i = 0; i < variableTable->count; i++) {
         Symbol *sym = &variableTable->symbols[i];
+        if (strcmp(sym->name, name) == 0) {
+            return &sym->value;
+        }
+    }
+    return NULL;
+}
+
+ASTNode *astNodeFromVarValue(const VarValue *value) {
+    if (!value) return NULL;
+
+    ASTNode *node = malloc(sizeof(ASTNode));
+    memset(node, 0, sizeof(ASTNode));
+
+    node->type = value->type;
+
+    switch (value->type) {
+        case AST_TEXT:
+            node->text = strdup(value->text);
+            break;
+
+        case AST_NUMBER:
+            node->number = value->number;
+            break;
+
+        case AST_NUMBER_DECIMAL:
+            node->decimal = value->decimal;
+            break;
+
+        case AST_BOOLEAN:
+            node->boolean = value->boolean;
+            break;
+
+        case AST_CHAR:
+            node->text = strdup(value->text); // 1‑char string
+            break;
+
+        default:
+            node->type = AST_ERROR;
+            break;
+    }
+
+    return node;
+}
+
+
+ASTNode *getVariableNode(SymbolTable *table, const char *name) {
+    for (int i = 0; i < table->count; i++) {
+        Symbol *sym = &table->symbols[i];
 
         if (strcmp(sym->name, name) == 0) {
-            // Convert VarValue → heap string, like compileExpr does
-            if (sym->value.type == AST_TEXT) {
-                return strdup(sym->value.text ? sym->value.text : "");
-            }
-            if (sym->value.type == AST_NUMBER) {
-                char buf[32];
-                snprintf(buf, sizeof(buf), "%d", sym->value.number);
-                return strdup(buf);
-            }
-            return strdup("");
+            return astNodeFromVarValue(&sym->value);
         }
     }
 
-    // Not found
-    return strdup(""); // or NULL, but then handle NULL in compileExpr
+    return NULL;
 }

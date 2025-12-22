@@ -8,6 +8,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "expression.h"
 #include "../debug.h"
 #include "../parser/parser.h"
 #include "variables/variables.h"
@@ -34,32 +35,77 @@ static char *join(const char *left, const char *right) {
     return out;
 }
 
-char *compileExpr(ASTNode *node) {
+// char *compileExpr(ASTNode *node) {
+//     switch (node->type) {
+//         case AST_TEXT:
+//             return strdup(node->text ? node->text : "");
+//
+//         case AST_NUMBER: {
+//             char buf[32];
+//             snprintf(buf, sizeof(buf), "%d", node->number);
+//             return strdup(buf);
+//         }
+//
+//         case AST_CONCAT: {
+//             char *left = compileExpr(node->binary.left);
+//             char *right = compileExpr(node->binary.right);
+//             return join(left, right);
+//         }
+//
+//         case AST_VARIABLE_CAST: {
+//             return getVariableValue(variableTable, node->text);
+//         }
+//         default:
+//             return strdup("");
+//     }
+// }
+
+void printLiteral(ASTNode *node) {
     switch (node->type) {
+
         case AST_TEXT:
-            return strdup(node->text ? node->text : "");
+            printf("%s", node->text);
+            break;
 
-        case AST_NUMBER: {
-            char buf[32];
-            snprintf(buf, sizeof(buf), "%d", node->number);
-            return strdup(buf);
-        }
+        case AST_CHAR:
+            printf("%c", node->text ? node->text[0] : '?');
+            break;
 
-        case AST_CONCAT: {
-            char *left = compileExpr(node->binary.left);
-            char *right = compileExpr(node->binary.right);
-            return join(left, right);
-        }
+        case AST_NUMBER:
+            printf("%d", node->number);
+            break;
 
-        case AST_VARIABLE_CAST: {
-            return getVariableValue(variableTable, node->text);
-        }
+        case AST_NUMBER_DECIMAL:
+            printf("%f", node->decimal);
+            break;
+
+        case AST_BOOLEAN:
+            printf(node->boolean ? "TRUE" : "FALSE");
+            break;
+
         default:
-            return strdup("");
+            printf("<invalid>");
+            break;
     }
+
+    printf("\n");
 }
 
 
+void compileFunctionCall( SymbolTable *table, ASTNode *node ) {
+
+    if ( strcmp( node->funcCall.name, "print") == 0) {
+        ASTNode *result = compileExpression( table, node->funcCall.arguments[0] );
+
+        printLiteral(result);
+        return;
+    }
+
+    printf("Unknown function: %s\n", node->funcCall.name);
+    // for (int i = 0; i < node->funcCall.count; ++i) {
+    //
+    // }
+}
 
 
 void runCompiler() {
@@ -75,8 +121,8 @@ void runCompiler() {
             case AST_VARIABLE_DEFINITION:
                 declareVariableByASTNode(variableTable, child);
                 break;
-            case AST_PRINT_STMT:
-
+            case AST_FUNCTION_CALL:
+                compileFunctionCall( variableTable, child);
                 break;
             default:
                 fprintf(stderr, "Unknown AST node type (%s)\n", astNodeTypeToString(child->type));

@@ -7,6 +7,7 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "../debug.h"
 #include "../compiler/expression.h"
@@ -15,13 +16,13 @@ int syntax_error_count = 0;
 
 void syntaxError(const char *message, Token token) {
     fprintf(stderr,
-        "Syntax error at %d:%d - %s\n",
-        token.line, token.column, message
+            "Syntax error at %d:%d - %s\n",
+            token.line, token.column, message
     );
     syntax_error_count++;
 }
 
-char *astNodeTypeToString(ASTNodeType type){
+char *astNodeTypeToString(ASTNodeType type) {
     switch (type) {
         case AST_PROGRAM:
             return "AST_PROGRAM";
@@ -46,7 +47,8 @@ char *astNodeTypeToString(ASTNodeType type){
 
         case AST_CONCAT:
             return "AST_CONCAT";
-
+        case AST_FUNCTION_CALL:
+            return "AST_FUNCTION_CALL";
         default:
             return "AST_UNKNOWN";
     }
@@ -71,7 +73,6 @@ Token currentToken() {
 }
 
 ASTNode *addASTNode(ASTNode *parent, ASTNode child) {
-
     // is not block type
     // if (parent->type != AST_BLOCK && parent->type != AST_PROGRAM)
     //     abort();
@@ -79,8 +80,8 @@ ASTNode *addASTNode(ASTNode *parent, ASTNode child) {
     // Grow children array if needed
     if (parent->block.count >= parent->block.capacity) {
         parent->block.capacity = parent->block.capacity
-            ? parent->block.capacity * 2
-            : 4;
+                                     ? parent->block.capacity * 2
+                                     : 4;
 
         parent->block.children = realloc(
             parent->block.children,
@@ -106,55 +107,58 @@ ASTNode *addASTNode(ASTNode *parent, ASTNode child) {
     return node;
 }
 
-bool evalExpectedToken(Token token, TokenType expected, char *message ) {
-    if ( token.type != expected) {
-        if ( !message )
+bool evalExpectedToken(Token token, TokenType expected, char *message) {
+    if (token.type != expected) {
+        if (!message)
             message = "Sintaxis unexpected, please check the code";
 
-        syntaxError( message, token );
+        syntaxError(message, token);
         return false;
     }
 
     return true;
 }
 
-ASTNode *evalVariableDefinitionValue(Token token ) {
+ASTNode *evalVariableDefinitionValue(Token token) {
     ASTNode *node = malloc(sizeof(ASTNode));
-    if (!node) { perror("malloc"); exit(EXIT_FAILURE); }
+    if (!node) {
+        perror("malloc");
+        exit(EXIT_FAILURE);
+    }
 
     switch (token.type) {
         case TOK_NUMBER:
-            *node = ( ASTNode ){
+            *node = ( ASTNode){
                 .type = AST_NUMBER,
                 .number = token.number
             };
             break;
         case TOK_TEXT:
-            *node = ( ASTNode ){
+            *node = ( ASTNode){
                 .type = AST_TEXT,
-                .text =  token.text
+                .text = token.text
             };
             break;
         case TOK_NUMBER_DECIMAL:
-            *node = ( ASTNode ){
+            *node = ( ASTNode){
                 .type = AST_NUMBER_DECIMAL,
-                .decimal =  token.decimal
+                .decimal = token.decimal
             };
             break;
         case TOK_CHAR:
-            *node = ( ASTNode ){
+            *node = ( ASTNode){
                 .type = AST_CHAR,
-                .text =  token.text
+                .text = token.text
             };
             break;
         case TOK_LITERAL_BOOLEAN:
-            *node = ( ASTNode ){
+            *node = ( ASTNode){
                 .type = AST_BOOLEAN,
-                .boolean =  token.boolean
+                .boolean = token.boolean
             };
             break;
         default:
-            syntaxError( "The value of the var was not expected", token );
+            syntaxError("The value of the var was not expected", token);
             free(node);
             return NULL;
     }
@@ -162,17 +166,17 @@ ASTNode *evalVariableDefinitionValue(Token token ) {
     return node;
 }
 
-bool evalVariableDefinition( ASTNode *parent, TokenType type, VarType varType) {
+bool evalVariableDefinition(ASTNode *parent, TokenType type, VarType varType) {
     Token tok = currentToken();
-    if ( tok.type != type) {
+    if (tok.type != type) {
         return false;
     }
 
-     nextPos(); // skip TYPE
+    nextPos(); // skip TYPE
 
-    Token varName  = currentToken();
-    if ( varName.type != TOK_PARENTHESIS_OPEN  && varName.type != TOK_VARIABLE ) {
-        syntaxError( "Variable name/size expected", varName );
+    Token varName = currentToken();
+    if (varName.type != TOK_PARENTHESIS_OPEN && varName.type != TOK_VARIABLE) {
+        syntaxError("Variable name/size expected", varName);
         nextPos();
         return false;
     }
@@ -198,13 +202,15 @@ bool evalVariableDefinition( ASTNode *parent, TokenType type, VarType varType) {
     }
 
     // Now expect variable name
-    varName  = currentToken(); nextPos();
-    if (  !evalExpectedToken(varName, TOK_VARIABLE, "Variable name expected") )
+    varName = currentToken();
+    nextPos();
+    if (!evalExpectedToken(varName, TOK_VARIABLE, "Variable name expected"))
         return false;
 
     // Expect '='
-    Token equals   = currentToken(); nextPos();
-    if ( !evalExpectedToken(equals, TOK_EQUALS, "Expected '='") )
+    Token equals = currentToken();
+    nextPos();
+    if (!evalExpectedToken(equals, TOK_EQUALS, "Expected '='"))
         return false;
 
     // Parse value
@@ -216,22 +222,22 @@ bool evalVariableDefinition( ASTNode *parent, TokenType type, VarType varType) {
         return false;
     }
 
-    if ( currentToken().type != TOK_SEMICOLON) {
+    if (currentToken().type != TOK_SEMICOLON) {
         parserPrintASTNode(valueNode, 0);
 
-        printf("CURRENCT TOKEN: %s \n", lexerTokenToString(currentToken().type ));
-        syntaxError( "Semicolon expected", currentToken() );
+        printf("CURRENCT TOKEN: %s \n", lexerTokenToString(currentToken().type));
+        syntaxError("Semicolon expected", currentToken());
         return false;
     }
 
     nextPos();
 
-    ASTNode definition = (ASTNode) {
+    ASTNode definition = (ASTNode){
         .type = AST_VARIABLE_DEFINITION,
         .varDecl = {
             .varType = varType,
-            .name =varName.text,
-            .value =  valueNode,
+            .name = varName.text,
+            .value = valueNode,
             .size = size
         }
     };
@@ -239,8 +245,45 @@ bool evalVariableDefinition( ASTNode *parent, TokenType type, VarType varType) {
     addASTNode(parent, definition);
     return true;
 }
-ASTNode getAST() {
 
+
+void parseFunctionCall(ASTNode *parent) {
+    Token functionCall = currentToken(); // function name token
+    nextPos();
+
+    // Expect '('
+    if (currentToken().type != TOK_PARENTHESIS_OPEN) {
+        syntaxError("Expected '(' after function name", currentToken());
+        return;
+    }
+
+    nextPos(); // skip '('
+
+    // Parse argument (for now only one)
+    // TODO accept comas as parameters, for now only has one
+    ASTNode *arg = parseExpression(0);
+
+    if (currentToken().type != TOK_PARENTHESIS_CLOSE) {
+        syntaxError("Function not closed", currentToken());
+        return;
+    }
+
+    nextPos(); // skip ')'
+
+    ASTNode *node = malloc(sizeof(ASTNode));
+    node->type = AST_FUNCTION_CALL;
+    node->funcCall.name = strdup(functionCall.text);
+
+    // Allocate children array
+    node->funcCall.count = 1;
+    node->funcCall.capacity = 1;
+    node->funcCall.arguments = malloc(sizeof(ASTNode *));
+    node->funcCall.arguments[0] = arg;
+
+    addASTNode( parent, *node );
+}
+
+ASTNode getAST() {
     ASTNode parent = {
         .type = AST_PROGRAM,
         .block = {
@@ -256,33 +299,39 @@ ASTNode getAST() {
     while (!isEnd()) {
         Token tok = currentToken();
 
-        if(evalVariableDefinition( &parent, TOK_VARIABLE_TYPE_STRING, VARIABLE_TYPE_STRING )) {
+        if (evalVariableDefinition(&parent, TOK_VARIABLE_TYPE_STRING, VARIABLE_TYPE_STRING)) {
             continue;
         }
 
-        if(evalVariableDefinition( &parent, TOK_VARIABLE_TYPE_INT, VARIABLE_TYPE_INT )) {
+        if (evalVariableDefinition(&parent, TOK_VARIABLE_TYPE_INT, VARIABLE_TYPE_INT)) {
             continue;
         }
 
-        if(evalVariableDefinition( &parent, TOK_VARIABLE_TYPE_BOOLEAN, VARIABLE_TYPE_BOOLEAN )) {
+        if (evalVariableDefinition(&parent, TOK_VARIABLE_TYPE_BOOLEAN, VARIABLE_TYPE_BOOLEAN)) {
             continue;
         }
 
-        if(evalVariableDefinition( &parent, TOK_VARIABLE_TYPE_FLOAT, VARIABLE_TYPE_FLOAT )) {
+        if (evalVariableDefinition(&parent, TOK_VARIABLE_TYPE_FLOAT, VARIABLE_TYPE_FLOAT)) {
             continue;
         }
 
-        if(evalVariableDefinition( &parent, TOK_VARIABLE_TYPE_CHAR, VARIABLE_TYPE_CHAR )) {
+        if (evalVariableDefinition(&parent, TOK_VARIABLE_TYPE_CHAR, VARIABLE_TYPE_CHAR)) {
             continue;
         }
+
+        if (tok.type == TOK_FUNCTION_CALL) {
+            parseFunctionCall( &parent );
+            continue;
+        }
+
 
         nextPos();
     }
 
     if (syntax_error_count > 0) {
         fprintf(stderr,
-            "\nCompilation failed with %d syntax error(s).\n",
-            syntax_error_count
+                "\nCompilation failed with %d syntax error(s).\n",
+                syntax_error_count
         );
         exit(EXIT_FAILURE);
     }

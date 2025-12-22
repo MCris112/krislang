@@ -12,6 +12,8 @@ typedef enum {
     AST_BLOCK,
     AST_PRINT_STMT,
 
+    AST_FUNCTION_CALL,
+
     AST_TEXT,
     AST_NUMBER,
     AST_NUMBER_DECIMAL,
@@ -63,6 +65,13 @@ typedef struct ASTNode {
             int count;
             int capacity;
         } block;
+
+        struct {
+            char *name;
+            struct ASTNode **arguments;
+            int count;
+            int capacity;
+        } funcCall;
     };
 } ASTNode;
 

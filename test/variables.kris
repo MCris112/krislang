@@ -1,17 +1,17 @@
-INT $sum = 32 + 32 + 1;
+//INT $sum = 32 + 32 + 1;
 STRING $texto = "Hola " + "Cristopher" +  " - mucho gusto,aqui vamos" + '@';
-// Variables text type
-STRING(32) $text = "Something here"; // fixed memory size
-STRING $autoText = "Something here"; //autosize memory
+//// Variables text type
+//STRING(32) $text = "Something here"; // fixed memory size
+//STRING $autoText = "Something here"; //autosize memory
+////
+//// Variables int type
+////INT(8) $sum = 32; // fixed memory size
+//INT $b = 32; // int type but autosize in memory
 //
-// Variables int type
-//INT(8) $sum = 32; // fixed memory size
-INT $b = 32; // int type but autosize in memory
+//CHAR $char = 'a';
+//BOOLEAN $true = TRUE;
 
-CHAR $char = 'a';
-BOOLEAN $true = TRUE;
-
-
+print( $texto );
 
 // Variable float type
 //FLOAT<2> $something = 33.3; // fixed  size (left , right: auto)

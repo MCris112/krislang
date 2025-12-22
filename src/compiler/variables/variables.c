@@ -8,16 +8,19 @@
 #include <stdlib.h>
 #include <string.h>
 
-void initSymbolTable(SymbolTable *variableTable) {
-    variableTable = malloc(sizeof(SymbolTable));
-    variableTable->symbols = NULL;
-    variableTable->count = 0;
-    variableTable->capacity = 0;
+#include "../expression.h"
+
+void initSymbolTable(SymbolTable **variableTable) {
+    *variableTable = malloc(sizeof(SymbolTable));
+    (*variableTable)->symbols = NULL;
+    (*variableTable)->count = 0;
+    (*variableTable)->capacity = 0;
 }
 
 void declareVariableByASTNode(SymbolTable *variableTable, ASTNode *node) {
     VarType type = node->varDecl.varType;
-    ASTNode *valueNode = node->varDecl.value;
+
+    ASTNode *valueNode = compileExpression(node->varDecl.value);
 
     VarValue value = {.type = valueNode->type};
     bool abort = false;
@@ -75,56 +78,6 @@ void declareVariableByASTNode(SymbolTable *variableTable, ASTNode *node) {
 
     variableTable->symbols[variableTable->count++] = symbol;
 }
-//
-// void declareVariable(const char *name, VarType type, VarValue value) {
-//     // Type check
-//     bool abort = false;
-//
-//     switch (type) {
-//         case VARIABLE_TYPE_STRING:
-//             if (value.type != AST_TEXT)
-//                 abort = true;
-//             break;
-//         case VARIABLE_TYPE_INT:
-//             if (value.type != AST_NUMBER)
-//                 abort = true;
-//             break;
-//         case VARIABLE_TYPE_FLOAT:
-//             if (value.type != AST_NUMBER_DECIMAL)
-//                 abort = true;
-//             break;
-//         case VARIABLE_TYPE_BOOLEAN:
-//             if (value.type != AST_BOOLEAN)
-//                 abort = true;
-//             break;
-//         case VARIABLE_TYPE_CHAR:
-//             if (value.type != AST_CHAR)
-//                 abort = true;
-//             break;
-//         default:
-//             break;
-//     }
-//
-//     if (abort) {
-//         fprintf(stderr, "Type mismatch for variable %s\n", name);
-//         exit(EXIT_FAILURE);
-//         return;
-//     }
-//
-//     // Grow table if needed
-//     if (variableTable->count >= variableTable->capacity) {
-//         variableTable->capacity = variableTable->capacity ? variableTable->capacity * 2 : 8;
-//         variableTable->symbols = realloc(
-//             variableTable->symbols,
-//             variableTable->capacity * sizeof(Symbol)
-//         );
-//     }
-//
-//     Symbol *sym = &variableTable->symbols[variableTable->count++];
-//     sym->name = strdup(name);
-//     sym->type = type;
-//     sym->value = value;
-// }
 
 char *getVariableValue(SymbolTable *variableTable, char *name) {
     if (variableTable->count == 0) {

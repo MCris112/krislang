@@ -63,7 +63,7 @@ char *compileExpr(ASTNode *node) {
 
 
 void runCompiler() {
-    initSymbolTable(variableTable);
+    initSymbolTable(&variableTable);
     ASTNode root = getAST();
 
     parserPrintAST(&root);

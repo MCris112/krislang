@@ -56,6 +56,24 @@
 //     return true;
 // }
 
+ASTNode *checkConcat(ASTNode *node, int deep) {
+    // check next is sum for concat
+    if (currentToken().type == TOK_PLUS) {
+        nextPos(); // consume '+'
+
+        ASTNode *right = parseExpression(deep);
+
+        ASTNode *concat = malloc(sizeof(ASTNode));
+        concat->type = AST_CONCAT;
+        concat->binary.left = node;
+        concat->binary.right = right;
+
+        return concat;
+    }
+
+    return node;
+}
+
 ASTNode *parseExpression(int deep ) {
     if (isEnd()) {
         ASTNode *err = malloc(sizeof(ASTNode));
@@ -71,21 +89,18 @@ ASTNode *parseExpression(int deep ) {
 
         nextPos();
 
-        // check next is sum for concat
-        if (currentToken().type == TOK_PLUS) {
-            nextPos(); // consume '+'
+        return checkConcat(text, deep);
+    }
 
-            ASTNode *right = parseExpression(deep);
+    if (currentToken().type == TOK_CHAR) {
+        // TEXT
+        ASTNode *text = malloc(sizeof(ASTNode));
+        text->type = AST_CHAR;
+        text->text = strdup(currentToken().text);
 
-            ASTNode *concat = malloc(sizeof(ASTNode));
-            concat->type = AST_CONCAT;
-            concat->binary.left = text;
-            concat->binary.right = right;
+        nextPos();
 
-            return concat;
-        }
-
-        return text;
+        return checkConcat(text, deep);
     }
 
     if (currentToken().type == TOK_NUMBER) {
@@ -96,21 +111,18 @@ ASTNode *parseExpression(int deep ) {
 
         nextPos();
 
-        // check next is sum for concat
-        if (currentToken().type == TOK_PLUS) {
-            nextPos(); // consume '+'
+        return checkConcat(number, deep);
+    }
 
-            ASTNode *right = parseExpression(deep);
+    if (currentToken().type == TOK_LITERAL_BOOLEAN) {
+        // TEXT
+        ASTNode *node = malloc(sizeof(ASTNode));
+        node->type = AST_BOOLEAN;
+        node->boolean = currentToken().boolean;
 
-            ASTNode *concat = malloc(sizeof(ASTNode));
-            concat->type = AST_CONCAT;
-            concat->binary.left = number;
-            concat->binary.right = right;
+        nextPos();
 
-            return concat;
-        }
-
-        return number;
+        return checkConcat(node, deep);
     }
 
     if (currentToken().type == TOK_VARIABLE) {
@@ -123,11 +135,94 @@ ASTNode *parseExpression(int deep ) {
     }
 
     if ( currentToken().type == TOK_SEMICOLON) {
-        return NULL;
+        // TODO decide if stop parsing by aborting or show errors
+        ASTNode *empty = malloc(sizeof(ASTNode));
+        empty->type = AST_ERROR;
+        return empty;
     }
 
     ASTNode *err = malloc(sizeof(ASTNode));
     err->type = AST_ERROR;
     nextPos();
     return err;
+}
+
+ASTNode *compileExpression(ASTNode *node) {
+
+    if (!node) return NULL;
+
+    switch (node->type) {
+
+        case AST_TEXT:
+        case AST_CHAR:
+        case AST_NUMBER:
+        case AST_NUMBER_DECIMAL:
+        case AST_BOOLEAN:
+            return node; // literal
+
+        case AST_CONCAT: {
+            ASTNode *left = compileExpression(node->binary.left);
+            ASTNode *right = compileExpression(node->binary.right);
+
+            ASTNode *result = malloc(sizeof(ASTNode));
+            memset(result, 0, sizeof(ASTNode));
+
+            if (left->type == AST_NUMBER && right->type == AST_NUMBER) {
+                result->type = AST_NUMBER;
+                result->number = left->number + right->number;
+                return result;
+            }
+
+            if (left->type == AST_TEXT && right->type == AST_NUMBER) {
+                result->type = AST_TEXT;
+                char buffer[64];
+                snprintf(buffer, sizeof(buffer), "%s%d", left->text, right->number);
+                result->text = strdup(buffer);
+                return result;
+            }
+
+            if ( left->type == AST_TEXT && right->type == AST_TEXT ) {
+                result->type = AST_TEXT;
+
+                // Getting size of each one
+                size_t lenA = strlen(left->text);
+                size_t lenB = strlen(right->text);
+
+                // Creating a buffer to combine
+                char *buf = malloc(lenA + lenB + 1);
+                memcpy(buf, left->text, lenA);
+                memcpy(buf + lenA, right->text, lenB + 1);
+
+                result->text = buf;
+
+                return result;
+            }
+
+            if ( left->type == AST_TEXT && right->type == AST_CHAR ) {
+                result->type = AST_TEXT;
+
+                // Getting size of each one
+                size_t lenA = strlen(left->text);
+                size_t lenB = strlen(right->text);
+
+                // Creating a buffer to combine
+                char *buf = malloc(lenA + lenB + 1);
+                memcpy(buf, left->text, lenA);
+                memcpy(buf + lenA, right->text, lenB + 1);
+
+                result->text = buf;
+
+                return result;
+            }
+
+            // TODO: handle string concat, variable concat, etc.
+
+            // Unsupported combination
+            result->type = AST_ERROR;
+            return result;
+        }
+
+        default:
+            return node;
+    }
 }

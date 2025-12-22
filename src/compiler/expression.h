@@ -9,4 +9,6 @@
 
 ASTNode *parseExpression(int deep );
 
+ASTNode *compileExpression( ASTNode *node );
+
 #endif //KRISLANG_EXPRESSION_H

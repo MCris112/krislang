@@ -6,7 +6,7 @@
 #ifndef KRISLANG_VARIABLES_H
 #define KRISLANG_VARIABLES_H
 
-void initSymbolTable(SymbolTable *variableTable);
+void initSymbolTable(SymbolTable **variableTable);
 
 void declareVariableByASTNode(SymbolTable *variableTable, ASTNode *node);
 

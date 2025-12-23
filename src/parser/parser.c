@@ -181,9 +181,12 @@ bool isVariableDefinition() {
 
 bool evalVariableDefinition(ASTNode *parent, TokenType type, VarType varType) {
     Token tok = currentToken();
+    printf("==== SET VARIABLE ON: %s \n", lexerTokenToString(tok.type) );
     if (tok.type != type) {
+        printf("NO VALID! \n");
         return false;
     }
+        printf("IS VALID! +++++ \n");
 
     nextPos(); // skip TYPE
 
@@ -229,14 +232,21 @@ bool evalVariableDefinition(ASTNode *parent, TokenType type, VarType varType) {
     // Parse value
     // Token varValue = currentToken(); nextPos();
     ASTNode *valueNode = parseExpression(0);
+    printf("[VAR] AFTER DEFINITION: %s \n", astNodeTypeToString(valueNode->type));
     // TODO check well the tokens, cuz if u pass like "String" this will throw like a normal function call instead of var definition
 
     printf("[VAR] After value expresed: %s\n", lexerTokenToString(currentToken().type));
-    parserPrintASTNode( valueNode, 1 );
 
     if (!valueNode) {
         return false;
     }
+
+    if ( currentToken().type != TOK_PARENTHESIS_CLOSE ) {
+        syntaxError("Expected ')' after value", equals);
+        return false;
+    }
+
+    nextPos();
 
     printf("CURRENCT TOKEN: %s \n", lexerTokenToString(currentToken().type));
     if (currentToken().type != TOK_SEMICOLON) {
@@ -263,48 +273,49 @@ bool evalVariableDefinition(ASTNode *parent, TokenType type, VarType varType) {
 }
 
 
-void parseFunctionCall2(ASTNode *parent) {
-    Token functionCall = currentToken(); // function name token
-    nextPos();
-
-    // Expect '('
-    if (currentToken().type != TOK_PARENTHESIS_OPEN) {
-        syntaxError("Expected '(' after function name", currentToken());
-        return;
-    }
-
-    nextPos(); // skip '('
-
-    // Parse argument (for now only one)
-    // TODO accept comas as parameters, for now only has one
-    ASTNode *arg = parseExpression(0);
-
-    if (currentToken().type != TOK_PARENTHESIS_CLOSE) {
-        syntaxError("Function not closed", currentToken());
-        return;
-    }
-
-    nextPos(); // skip ')'
-
-    ASTNode *node = malloc(sizeof(ASTNode));
-    node->type = AST_FUNCTION_CALL;
-    node->funcCall.name = strdup(functionCall.text);
-
-    // Allocate children array
-    node->funcCall.count = 1;
-    node->funcCall.capacity = 1;
-    node->funcCall.arguments = malloc(sizeof(ASTNode *));
-    node->funcCall.arguments[0] = arg;
-
-    addASTNode(parent, *node);
-}
+// void parseFunctionCall2(ASTNode *parent) {
+//     Token functionCall = currentToken(); // function name token
+//     nextPos();
+//
+//     // Expect '('
+//     if (currentToken().type != TOK_PARENTHESIS_OPEN) {
+//         syntaxError("Expected '(' after function name", currentToken());
+//         return;
+//     }
+//
+//     nextPos(); // skip '('
+//
+//     // Parse argument (for now only one)
+//     // TODO accept comas as parameters, for now only has one
+//     ASTNode *arg = parseExpression(0);
+//
+//     if (currentToken().type != TOK_PARENTHESIS_CLOSE) {
+//         syntaxError("Function not closed", currentToken());
+//         return;
+//     }
+//
+//     nextPos(); // skip ')'
+//
+//     ASTNode *node = malloc(sizeof(ASTNode));
+//     node->type = AST_FUNCTION_CALL;
+//     node->funcCall.name = strdup(functionCall.text);
+//
+//     // Allocate children array
+//     node->funcCall.count = 1;
+//     node->funcCall.capacity = 1;
+//     node->funcCall.arguments = malloc(sizeof(ASTNode *));
+//     node->funcCall.arguments[0] = arg;
+//
+//     addASTNode(parent, *node);
+// }
 
 void *parseBody(ASTNode **parent) {
     printf("----------------NEW BODY-------------\n\n");
     while (!isEnd() && currentToken().type != TOK_BRACE_CLOSE ) {
-        Token tok = currentToken();
 
-        if (tok.type == TOK_LOGICAL_IF) {
+        if (currentToken().type == TOK_LOGICAL_IF) {
+            printf("IS TOK_LOGICAL_IF!!!..\n");
+
             nextPos();
             ASTNode *nodeIf = malloc(sizeof(ASTNode));
             nodeIf->type = AST_LOGICAL_IF;
@@ -351,8 +362,10 @@ void *parseBody(ASTNode **parent) {
             if (evalVariableDefinition(*parent, TOK_VARIABLE_TYPE_CHAR, VARIABLE_TYPE_CHAR)) continue;
         }
 
-        if (tok.type == TOK_FUNCTION_CALL) {
-            parseFunctionCall2(*parent);
+        if (currentToken().type == TOK_FUNCTION_CALL) {
+            printf("IS TOK_FUNCTION CALL: TOKEN: %s  \n \n", lexerTokenToString(currentToken().type));
+            ASTNode *func = parseFunctionCall();
+            addASTNode( *parent, *func);
             continue;
         }
 
@@ -372,6 +385,8 @@ ASTNode getAST() {
     parent->block.count = 0;
 
     parseBody( &parent );
+
+    parserPrintAST( parent );
 
     if (syntax_error_count > 0) {
         fprintf(stderr,

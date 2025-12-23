@@ -59,26 +59,6 @@
 //     return true;
 // }
 
-ASTNode *checkConcat(ASTNode *node, int deep) {
-    // check next is sum for concat
-    if (currentToken().type == TOK_PLUS) {
-        printf("[EXPRESSION] CONCATING...: %s\n", lexerTokenToString(currentToken().type));
-
-        nextPos(); // consume '+'
-
-        ASTNode *right = parseExpression(deep);
-
-        ASTNode *concat = malloc(sizeof(ASTNode));
-        concat->type = AST_CONCAT;
-        concat->binary.left = node;
-        concat->binary.right = right;
-
-        return concat;
-    }
-
-    return node;
-}
-
 void parserAddFunctionArgument(ASTNode **funcNode, ASTNode *arg) {
     // Upper memory size for function if is need it
     if ((*funcNode)->funcCall.count >= (*funcNode)->funcCall.capacity) {
@@ -95,6 +75,7 @@ void parserAddFunctionArgument(ASTNode **funcNode, ASTNode *arg) {
 }
 
 ASTNode *parseFunctionCall() {
+    printf(" \n \n  ===FUNCTION CALL ===\n");
     Token functionCall = currentToken(); // function name token
     nextPos();
 
@@ -112,7 +93,10 @@ ASTNode *parseFunctionCall() {
     func->funcCall.count = 0;
 
     while (!isEnd() && currentToken().type != TOK_PARENTHESIS_CLOSE) {
+        //nextPos(); // skip coma or first parentesis
+        printf("[parseFunctionCall][WHILE] BEFORE SKIPPING: %s \n", lexerTokenToString(currentToken().type) );
         nextPos(); // skip coma or first parentesis
+        printf("[parseFunctionCall][WHILE] AFTER SKIPPING: %s \n", lexerTokenToString(currentToken().type) );
 
         Token token = currentToken();
         ASTNode *arg = parseExpression(0);
@@ -137,12 +121,16 @@ ASTNode *parseFunctionCall() {
         return NULL;
     }
 
-    nextPos(); // skip ')'
+    printf("[parseFunctionCall] BEFORE SKIPPING: %s \n", lexerTokenToString(currentToken().type) );
 
+    nextPos(); // skip ')'
+    printf("[parseFunctionCall] AFTER SKIPPING: %s \n", lexerTokenToString(currentToken().type) );
+    printf(" \n \n  === END FUNCTION CALL ===\n\n");
     return func;
 }
 
 ASTNode *parseExpression(int deep) {
+    printf("[EXPRESSION] EXECUTING....: %s \n", lexerTokenToString(currentToken().type));
     if (isEnd()) {
         ASTNode *err = malloc(sizeof(ASTNode));
         err->type = AST_ERROR;
@@ -150,12 +138,6 @@ ASTNode *parseExpression(int deep) {
     }
 
     ASTNode *node = malloc(sizeof(ASTNode));
-
-    if ( currentToken().type == TOK_SEMICOLON) {
-        node->type = AST_EOF;
-        return node;
-    }
-
 
     // if (currentToken().type == TOK_SEMICOLON) {
     //     // TODO decide if stop parsing by aborting or show errors
@@ -199,16 +181,31 @@ ASTNode *parseExpression(int deep) {
 
     nextPos();
 
-    printf("[EXPRESSION] SKIPPING: %s\n", lexerTokenToString(currentToken().type));
+    printf("[EXPRESSION] SKIPPING(1): %s\n", lexerTokenToString(currentToken().type));
 
     // Case have error, return the error, dont do more
     if ( node->type == AST_ERROR ) {
         return node;
     }
 
-    node = checkConcat(node, deep);
+    // check next is sum for concat
+    if (currentToken().type == TOK_PLUS) {
+        printf("[EXPRESSION] CONCATING...: %s\n", lexerTokenToString(currentToken().type));
+
+        nextPos(); // consume '+'
+
+        ASTNode *right = parseExpression(deep);
+
+        ASTNode *concat = malloc(sizeof(ASTNode));
+        concat->type = AST_CONCAT;
+        concat->binary.left = node;
+        concat->binary.right = right;
+
+        node = concat;
+    }
 
     if ( currentToken().type == TOK_EQUAL_EQUAL ) {
+        printf( "Consuming TOK_EQUAL_EQUAL: Line: %d, Column: %d  \n", currentToken().line, currentToken().column );
         nextPos(); // consume '=='
 
         ASTNode *right = parseExpression(deep);

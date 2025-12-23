@@ -8,6 +8,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "../debug.h"
 #include "variables/variables.h"
 
 // bool evalVariableDefinition() {
@@ -61,6 +62,8 @@
 ASTNode *checkConcat(ASTNode *node, int deep) {
     // check next is sum for concat
     if (currentToken().type == TOK_PLUS) {
+        printf("[EXPRESSION] CONCATING...: %s\n", lexerTokenToString(currentToken().type));
+
         nextPos(); // consume '+'
 
         ASTNode *right = parseExpression(deep);
@@ -146,75 +149,80 @@ ASTNode *parseExpression(int deep) {
         return err;
     }
 
-    if (currentToken().type == TOK_TEXT) {
-        // TEXT
-        ASTNode *text = malloc(sizeof(ASTNode));
-        text->type = AST_TEXT;
-        text->text = strdup(currentToken().text);
+    ASTNode *node = malloc(sizeof(ASTNode));
 
-        nextPos();
-
-        return checkConcat(text, deep);
+    if ( currentToken().type == TOK_SEMICOLON) {
+        node->type = AST_EOF;
+        return node;
     }
 
-    if (currentToken().type == TOK_CHAR) {
-        // TEXT
-        ASTNode *text = malloc(sizeof(ASTNode));
-        text->type = AST_CHAR;
-        text->text = strdup(currentToken().text);
 
-        nextPos();
+    // if (currentToken().type == TOK_SEMICOLON) {
+    //     // TODO decide if stop parsing by aborting or show errors
+    //     ASTNode *empty = malloc(sizeof(ASTNode));
+    //     empty->type = AST_ERROR;
+    //     return empty;
+    // }
 
-        return checkConcat(text, deep);
+    switch ( currentToken().type ) {
+        case  TOK_TEXT:
+            node->type = AST_TEXT;
+            node->text = strdup(currentToken().text);
+            break;
+        case  TOK_CHAR:
+            node->type = AST_CHAR;
+            node->text = strdup(currentToken().text);
+            break;
+        case TOK_NUMBER:
+            node->type = AST_NUMBER;
+            node->number = currentToken().number;
+            break;
+        case TOK_NUMBER_DECIMAL:
+            node->type = AST_NUMBER_DECIMAL;
+            node->decimal = currentToken().decimal;
+            break;
+        case TOK_LITERAL_BOOLEAN:
+            node->type = AST_BOOLEAN;
+            node->boolean = currentToken().boolean;
+            break;
+        case TOK_VARIABLE:
+            node->type = AST_VARIABLE_CAST;
+            node->text = strdup(currentToken().text);
+            break;
+        case TOK_FUNCTION_CALL:
+            node = parseFunctionCall();
+            break;
+        default:
+            node->type = AST_ERROR;
+            break;
     }
 
-    if (currentToken().type == TOK_NUMBER) {
-        // NUMBER
-        ASTNode *number = malloc(sizeof(ASTNode));
-        number->type = AST_NUMBER;
-        number->number = currentToken().number;
-
-        nextPos();
-
-        return checkConcat(number, deep);
-    }
-
-    if (currentToken().type == TOK_LITERAL_BOOLEAN) {
-        // TEXT
-        ASTNode *node = malloc(sizeof(ASTNode));
-        node->type = AST_BOOLEAN;
-        node->boolean = currentToken().boolean;
-
-        nextPos();
-
-        return checkConcat(node, deep);
-    }
-
-    if (currentToken().type == TOK_VARIABLE) {
-        ASTNode *var = malloc(sizeof(ASTNode));
-        var->type = AST_VARIABLE_CAST;
-        var->text = strdup(currentToken().text);
-
-        nextPos();
-        return checkConcat(var, deep);
-    }
-
-    if (currentToken().type == TOK_SEMICOLON) {
-        // TODO decide if stop parsing by aborting or show errors
-        ASTNode *empty = malloc(sizeof(ASTNode));
-        empty->type = AST_ERROR;
-        return empty;
-    }
-
-    if (currentToken().type == TOK_FUNCTION_CALL) {
-        ASTNode *funcNode = parseFunctionCall();
-        return funcNode;
-    }
-
-    ASTNode *err = malloc(sizeof(ASTNode));
-    err->type = AST_ERROR;
     nextPos();
-    return err;
+
+    printf("[EXPRESSION] SKIPPING: %s\n", lexerTokenToString(currentToken().type));
+
+    // Case have error, return the error, dont do more
+    if ( node->type == AST_ERROR ) {
+        return node;
+    }
+
+    node = checkConcat(node, deep);
+
+    if ( currentToken().type == TOK_EQUAL_EQUAL ) {
+        nextPos(); // consume '=='
+
+        ASTNode *right = parseExpression(deep);
+
+        ASTNode *compare = malloc(sizeof(ASTNode));
+        compare->type = AST_COMPARE;
+        compare->binary.left = node;
+        compare->binary.right = right;
+
+        node = compare;
+    }
+
+    printf("[EXPRESSION] RETURNING: %s\n", lexerTokenToString(currentToken().type));
+    return node;
 }
 
 

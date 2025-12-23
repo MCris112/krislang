@@ -23,9 +23,12 @@ typedef enum {
     AST_ERROR,
 
     AST_CONCAT, // CONCAT CERTAIN VALUES
+    AST_COMPARE,
 
     AST_VARIABLE_DEFINITION, // Define a new var $varname = "something"
-    AST_VARIABLE_CAST // call a var like: echo $varname;
+    AST_VARIABLE_CAST, // call a var like: echo $varname;
+
+    AST_EOF // DECLARE END;
 } ASTNodeType;
 
 typedef enum {

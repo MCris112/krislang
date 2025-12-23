@@ -168,6 +168,17 @@ ASTNode *evalVariableDefinitionValue(Token token) {
     return node;
 }
 
+bool isVariableDefinition() {
+    TokenType t = currentToken().type;
+    return t == TOK_VARIABLE_TYPE_INT ||
+           t == TOK_VARIABLE_TYPE_STRING ||
+           t == TOK_VARIABLE_TYPE_BOOLEAN ||
+           t == TOK_VARIABLE_TYPE_FLOAT ||
+           t == TOK_VARIABLE_TYPE_CHAR ||
+           t == TOK_VARIABLE_TYPE_VOID;
+}
+
+
 bool evalVariableDefinition(ASTNode *parent, TokenType type, VarType varType) {
     Token tok = currentToken();
     if (tok.type != type) {
@@ -220,14 +231,17 @@ bool evalVariableDefinition(ASTNode *parent, TokenType type, VarType varType) {
     ASTNode *valueNode = parseExpression(0);
     // TODO check well the tokens, cuz if u pass like "String" this will throw like a normal function call instead of var definition
 
+    printf("[VAR] After value expresed: %s\n", lexerTokenToString(currentToken().type));
+    parserPrintASTNode( valueNode, 1 );
+
     if (!valueNode) {
         return false;
     }
 
+    printf("CURRENCT TOKEN: %s \n", lexerTokenToString(currentToken().type));
     if (currentToken().type != TOK_SEMICOLON) {
         parserPrintASTNode(valueNode, 0);
 
-        printf("CURRENCT TOKEN: %s \n", lexerTokenToString(currentToken().type));
         syntaxError("Semicolon expected", currentToken());
         return false;
     }
@@ -282,61 +296,82 @@ void parseFunctionCall2(ASTNode *parent) {
     node->funcCall.arguments = malloc(sizeof(ASTNode *));
     node->funcCall.arguments[0] = arg;
 
-    addASTNode( parent, *node );
+    addASTNode(parent, *node);
 }
 
-ASTNode getAST() {
-    ASTNode parent = {
-        .type = AST_PROGRAM,
-        .block = {
-            .children = NULL,
-            .count = 0,
-            .capacity = 0
-        }
-    };
-
-    const Token *tokens = getTokens();
-    int count = getTokensCount();
-
-    while (!isEnd()) {
+void *parseBody(ASTNode **parent) {
+    printf("----------------NEW BODY-------------\n\n");
+    while (!isEnd() && currentToken().type != TOK_BRACE_CLOSE ) {
         Token tok = currentToken();
 
-        if (evalVariableDefinition(&parent, TOK_VARIABLE_TYPE_STRING, VARIABLE_TYPE_STRING)) {
+        if (tok.type == TOK_LOGICAL_IF) {
+            nextPos();
+            ASTNode *nodeIf = malloc(sizeof(ASTNode));
+            nodeIf->type = AST_LOGICAL_IF;
+
+            printf("Current token: %s on line: %d \n", lexerTokenToString(currentToken().type), currentToken().line);
+            if (currentToken().type != TOK_PARENTHESIS_OPEN) {
+                syntaxError("Expected '(' to start if", currentToken());
+                continue;
+            }
+
+            nextPos();
+
+            ASTNode *expression = parseExpression(0);
+            nodeIf->logicalIf.conditional = expression;
+
+            printf("Current token: %s on line: %d \n", lexerTokenToString(currentToken().type), currentToken().line);
+            if (currentToken().type != TOK_PARENTHESIS_CLOSE) {
+                syntaxError("Expected ')' after expression", currentToken());
+                continue;
+            }
+
+            nextPos(); // Skip ')'
+
+            if ( currentToken().type != TOK_BRACE_OPEN ) {
+                syntaxError("Expected '{' after expression", currentToken());
+                continue;
+            }
+
+            nextPos(); // Skipp {
+
+            printf("====== IN BODY?......\n");
+            parseBody( &nodeIf );
+
+            addASTNode( *parent, *nodeIf);
             continue;
         }
 
-        if (evalVariableDefinition(&parent, TOK_VARIABLE_TYPE_INT, VARIABLE_TYPE_INT)) {
-            continue;
-        }
-
-        if (evalVariableDefinition(&parent, TOK_VARIABLE_TYPE_BOOLEAN, VARIABLE_TYPE_BOOLEAN)) {
-            continue;
-        }
-
-        if (evalVariableDefinition(&parent, TOK_VARIABLE_TYPE_FLOAT, VARIABLE_TYPE_FLOAT)) {
-            continue;
-        }
-
-        if (evalVariableDefinition(&parent, TOK_VARIABLE_TYPE_CHAR, VARIABLE_TYPE_CHAR)) {
-            continue;
+        // 2. VARIABLE DEFINITIONS
+        if (isVariableDefinition()) {
+            if (evalVariableDefinition(*parent, TOK_VARIABLE_TYPE_STRING, VARIABLE_TYPE_STRING)) continue;
+            if (evalVariableDefinition(*parent, TOK_VARIABLE_TYPE_INT, VARIABLE_TYPE_INT)) continue;
+            if (evalVariableDefinition(*parent, TOK_VARIABLE_TYPE_BOOLEAN, VARIABLE_TYPE_BOOLEAN)) continue;
+            if (evalVariableDefinition(*parent, TOK_VARIABLE_TYPE_FLOAT, VARIABLE_TYPE_FLOAT)) continue;
+            if (evalVariableDefinition(*parent, TOK_VARIABLE_TYPE_CHAR, VARIABLE_TYPE_CHAR)) continue;
         }
 
         if (tok.type == TOK_FUNCTION_CALL) {
-            parseFunctionCall2( &parent );
+            parseFunctionCall2(*parent);
             continue;
         }
 
-        if ( tok.type = TOK_LOGICAL_IF ) {
-            ASTNode *nodeIf = malloc( sizeof(ASTNode) );
-            nodeIf->type = AST_LOGICAL_IF;
-            nextPos();
-
-            addASTNode( &parent, *nodeIf );
-            continue;
-        }
 
         nextPos();
     }
+
+    printf("\n\n----------------END BODY-------------\n\n");
+
+}
+
+ASTNode getAST() {
+    ASTNode *parent = malloc( sizeof(ASTNode) );
+    parent->type = AST_PROGRAM;
+    parent->block.children = NULL;
+    parent->block.capacity = 0;
+    parent->block.count = 0;
+
+    parseBody( &parent );
 
     if (syntax_error_count > 0) {
         fprintf(stderr,
@@ -346,5 +381,5 @@ ASTNode getAST() {
         exit(EXIT_FAILURE);
     }
 
-    return parent;
+    return *parent;
 }

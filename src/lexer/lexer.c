@@ -425,7 +425,7 @@ void parseLexer(const char *input) {
         //---------------------------
         // Logical
         //---------------------------
-        if ( strcmp(pos, "IF") == 0 ) {
+        if ( strncmp(pos, "IF", 2) == 0 ) {
 
             addToken( (Token){
                 .type = TOK_LOGICAL_IF,

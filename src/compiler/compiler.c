@@ -80,6 +80,8 @@ void runCompiler() {
             case AST_FUNCTION_CALL:
                 compileFunctionCall( variableTable, child);
                 break;
+            case AST_LOGICAL_IF:
+                break;
             default:
                 fprintf(stderr, "Unknown AST node type (%s)\n", astNodeTypeToString(child->type));
                 break;

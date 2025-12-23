@@ -35,6 +35,7 @@ const char *lexerTokenToString(TokenType type) {
         case TOK_NOT_EQUAL: return "TOK_NOT_EQUAL";
 
         // LOGICAL
+        case TOK_LOGICAL_IF: return "TOK_LOGICAL_IF";
         case TOK_LOGICAL_AND: return "TOK_LOGICAL_AND";
         case TOK_LOGICAL_OR: return "TOK_LOGICAL_OR";
         case TOK_LOGICAL_NOT: return "TOK_LOGICAL_NOT";

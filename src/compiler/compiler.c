@@ -60,52 +60,8 @@ static char *join(const char *left, const char *right) {
 //     }
 // }
 
-void printLiteral(ASTNode *node) {
-    switch (node->type) {
-
-        case AST_TEXT:
-            printf("%s", node->text);
-            break;
-
-        case AST_CHAR:
-            printf("%c", node->text ? node->text[0] : '?');
-            break;
-
-        case AST_NUMBER:
-            printf("%d", node->number);
-            break;
-
-        case AST_NUMBER_DECIMAL:
-            printf("%f", node->decimal);
-            break;
-
-        case AST_BOOLEAN:
-            printf(node->boolean ? "TRUE" : "FALSE");
-            break;
-
-        default:
-            printf("<invalid>");
-            break;
-    }
-
-    printf("\n");
-}
 
 
-void compileFunctionCall( SymbolTable *table, ASTNode *node ) {
-
-    if ( strcmp( node->funcCall.name, "print") == 0) {
-        ASTNode *result = compileExpression( table, node->funcCall.arguments[0] );
-
-        printLiteral(result);
-        return;
-    }
-
-    printf("Unknown function: %s\n", node->funcCall.name);
-    // for (int i = 0; i < node->funcCall.count; ++i) {
-    //
-    // }
-}
 
 
 void runCompiler() {

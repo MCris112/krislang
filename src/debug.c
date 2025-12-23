@@ -133,7 +133,6 @@ void parserPrintASTNode(ASTNode *node, int indent) {
     switch (node->type) {
 
         case AST_PROGRAM:
-        case AST_PRINT_STMT:
             for (int i = 0; i < node->block.count; i++) {
                 parserPrintASTNode(node->block.children[i], indent + 1);
             }
@@ -159,6 +158,12 @@ void parserPrintASTNode(ASTNode *node, int indent) {
             for (int i = 0; i < node->funcCall.count; i++) {
                 parserPrintASTNode(node->funcCall.arguments[i], indent + 1);
             }
+            break;
+        case AST_LOGICAL_IF:
+            printf("\n");
+            // for (int i = 0; i < node->funcCall.count; i++) {
+            //     parserPrintASTNode(node->funcCall.arguments[i], indent + 1);
+            // }
             break;
         default:
             // Leaf nodes: nothing to recurse into

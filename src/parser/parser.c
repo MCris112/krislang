@@ -49,6 +49,8 @@ char *astNodeTypeToString(ASTNodeType type) {
             return "AST_CONCAT";
         case AST_FUNCTION_CALL:
             return "AST_FUNCTION_CALL";
+        case AST_LOGICAL_IF:
+            return "AST_LOGICAL_IF";
         default:
             return "AST_UNKNOWN";
     }
@@ -216,8 +218,8 @@ bool evalVariableDefinition(ASTNode *parent, TokenType type, VarType varType) {
     // Parse value
     // Token varValue = currentToken(); nextPos();
     ASTNode *valueNode = parseExpression(0);
+    // TODO check well the tokens, cuz if u pass like "String" this will throw like a normal function call instead of var definition
 
-    // ASTNode *valueNode = evalVariableDefinitionValue(varValue);
     if (!valueNode) {
         return false;
     }
@@ -247,7 +249,7 @@ bool evalVariableDefinition(ASTNode *parent, TokenType type, VarType varType) {
 }
 
 
-void parseFunctionCall(ASTNode *parent) {
+void parseFunctionCall2(ASTNode *parent) {
     Token functionCall = currentToken(); // function name token
     nextPos();
 
@@ -320,10 +322,18 @@ ASTNode getAST() {
         }
 
         if (tok.type == TOK_FUNCTION_CALL) {
-            parseFunctionCall( &parent );
+            parseFunctionCall2( &parent );
             continue;
         }
 
+        if ( tok.type = TOK_LOGICAL_IF ) {
+            ASTNode *nodeIf = malloc( sizeof(ASTNode) );
+            nodeIf->type = AST_LOGICAL_IF;
+            nextPos();
+
+            addASTNode( &parent, *nodeIf );
+            continue;
+        }
 
         nextPos();
     }

@@ -13,6 +13,7 @@ typedef enum {
     AST_PRINT_STMT,
 
     AST_FUNCTION_CALL,
+    AST_LOGICAL_IF,
 
     AST_TEXT,
     AST_NUMBER,
@@ -72,6 +73,13 @@ typedef struct ASTNode {
             int count;
             int capacity;
         } funcCall;
+
+        struct {
+            struct ASTNode *conditional;
+            struct ASTNode **children;
+            int count;
+            int capacity;
+        } logicalIf;
     };
 } ASTNode;
 

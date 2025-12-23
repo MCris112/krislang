@@ -76,7 +76,70 @@ ASTNode *checkConcat(ASTNode *node, int deep) {
     return node;
 }
 
-ASTNode *parseExpression(int deep ) {
+void parserAddFunctionArgument(ASTNode **funcNode, ASTNode *arg) {
+    // Upper memory size for function if is need it
+    if ((*funcNode)->funcCall.count >= (*funcNode)->funcCall.capacity) {
+        (*funcNode)->funcCall.capacity = (*funcNode)->funcCall.capacity ? (*funcNode)->funcCall.capacity * 2 : 8;
+
+        (*funcNode)->funcCall.arguments = realloc(
+            (*funcNode)->funcCall.arguments,
+            (*funcNode)->funcCall.capacity * sizeof(ASTNode *)
+        );
+    }
+
+    (*funcNode)->funcCall.arguments[(*funcNode)->funcCall.count] = arg;
+    (*funcNode)->funcCall.count++;
+}
+
+ASTNode *parseFunctionCall() {
+    Token functionCall = currentToken(); // function name token
+    nextPos();
+
+    // Expect '('
+    if (currentToken().type != TOK_PARENTHESIS_OPEN) {
+        syntaxError("Expected '(' after function name", currentToken());
+        return NULL;
+    }
+
+    ASTNode *func = malloc(sizeof(ASTNode));
+    func->type = AST_FUNCTION_CALL;
+    func->funcCall.name = strdup(functionCall.text);
+    func->funcCall.arguments = NULL;
+    func->funcCall.capacity = 0;
+    func->funcCall.count = 0;
+
+    while (!isEnd() && currentToken().type != TOK_PARENTHESIS_CLOSE) {
+        nextPos(); // skip coma or first parentesis
+
+        Token token = currentToken();
+        ASTNode *arg = parseExpression(0);
+
+        if (arg == NULL) {
+            syntaxError("Unexpected parameter", token);
+            break;
+        }
+
+        parserAddFunctionArgument(&func, arg);
+
+        if (currentToken().type != TOK_PARENTHESIS_CLOSE) {
+            if (currentToken().type != TOK_COMMA) {
+                syntaxError("Expected to close or more args", currentToken());
+                break;
+            }
+        }
+    }
+
+    if (isEnd()) {
+        syntaxError("Expected to close or more args", currentToken());
+        return NULL;
+    }
+
+    nextPos(); // skip ')'
+
+    return func;
+}
+
+ASTNode *parseExpression(int deep) {
     if (isEnd()) {
         ASTNode *err = malloc(sizeof(ASTNode));
         err->type = AST_ERROR;
@@ -136,11 +199,16 @@ ASTNode *parseExpression(int deep ) {
         return checkConcat(var, deep);
     }
 
-    if ( currentToken().type == TOK_SEMICOLON) {
+    if (currentToken().type == TOK_SEMICOLON) {
         // TODO decide if stop parsing by aborting or show errors
         ASTNode *empty = malloc(sizeof(ASTNode));
         empty->type = AST_ERROR;
         return empty;
+    }
+
+    if (currentToken().type == TOK_FUNCTION_CALL) {
+        ASTNode *funcNode = parseFunctionCall();
+        return funcNode;
     }
 
     ASTNode *err = malloc(sizeof(ASTNode));
@@ -149,12 +217,78 @@ ASTNode *parseExpression(int deep ) {
     return err;
 }
 
-ASTNode *compileExpression(SymbolTable *symbolTable, ASTNode *node) {
 
+//-----------------------------------
+// Compile
+//-----------------------------------
+void printLiteral(ASTNode *node) {
+    switch (node->type) {
+        case AST_TEXT:
+            printf("%s", node->text);
+            break;
+
+        case AST_CHAR:
+            printf("%c", node->text ? node->text[0] : '?');
+            break;
+
+        case AST_NUMBER:
+            printf("%d", node->number);
+            break;
+
+        case AST_NUMBER_DECIMAL:
+            printf("%f", node->decimal);
+            break;
+
+        case AST_BOOLEAN:
+            printf(node->boolean ? "TRUE" : "FALSE");
+            break;
+
+        default:
+            printf("<invalid>");
+            break;
+    }
+
+    printf("\n");
+}
+
+ASTNode *compileFunctionCall(SymbolTable *table, ASTNode *node) {
+    if (strcmp(node->funcCall.name, "print") == 0) {
+        ASTNode *result = compileExpression(table, node->funcCall.arguments[0]);
+
+        printLiteral(result);
+        return NULL;
+    }
+
+    if (strcmp(node->funcCall.name, "input") == 0) {
+        ASTNode *result = compileExpression(table, node->funcCall.arguments[0]);
+
+        // TODO check correct buffer
+        char buffer[256];
+
+        // If dev set some text on it, show a print
+        if ( result != NULL )
+            printLiteral( result );
+
+        fflush(stdout);
+        fgets(buffer, sizeof(buffer), stdin);
+        buffer[strcspn(buffer, "\n")] = '\0'; // remove newline
+
+        ASTNode *input = malloc(sizeof(ASTNode));
+        input->type = AST_TEXT;
+        input->text = strdup(buffer);
+        return input;
+    }
+
+    printf("Unknown function: %s\n", node->funcCall.name);
+    // for (int i = 0; i < node->funcCall.count; ++i) {
+    //
+    // }
+}
+
+ASTNode *compileExpression(SymbolTable *symbolTable, ASTNode *node) {
     if (!node) return NULL;
 
     switch (node->type) {
-
         case AST_TEXT:
         case AST_CHAR:
         case AST_NUMBER:
@@ -163,7 +297,7 @@ ASTNode *compileExpression(SymbolTable *symbolTable, ASTNode *node) {
             return node; // literal
 
         case AST_VARIABLE_CAST:
-            return getVariableNode( symbolTable , node->text );
+            return getVariableNode(symbolTable, node->text);
             break;
         case AST_CONCAT: {
             ASTNode *left = compileExpression(symbolTable, node->binary.left);
@@ -186,7 +320,7 @@ ASTNode *compileExpression(SymbolTable *symbolTable, ASTNode *node) {
                 return result;
             }
 
-            if ( left->type == AST_TEXT && right->type == AST_TEXT ) {
+            if (left->type == AST_TEXT && right->type == AST_TEXT) {
                 result->type = AST_TEXT;
 
                 // Getting size of each one
@@ -203,7 +337,7 @@ ASTNode *compileExpression(SymbolTable *symbolTable, ASTNode *node) {
                 return result;
             }
 
-            if ( left->type == AST_TEXT && right->type == AST_CHAR ) {
+            if (left->type == AST_TEXT && right->type == AST_CHAR) {
                 result->type = AST_TEXT;
 
                 // Getting size of each one
@@ -235,6 +369,9 @@ ASTNode *compileExpression(SymbolTable *symbolTable, ASTNode *node) {
             return result;
         }
 
+        case AST_FUNCTION_CALL:
+            return compileFunctionCall(symbolTable, node);
+            break;
         default:
             return node;
     }

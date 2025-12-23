@@ -33,8 +33,9 @@ typedef enum {
     TOK_NOT_EQUAL,
 
     //---------------------------
-    // Logical operators
+    // Logical
     //---------------------------
+    TOK_LOGICAL_IF,
     TOK_LOGICAL_AND,
     TOK_LOGICAL_OR,
     TOK_LOGICAL_NOT,

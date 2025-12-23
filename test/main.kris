@@ -1,6 +1,7 @@
-STRING $texto = "Hello world" + " Cristopher";
+STRING $input = input("Dime un número?");
 
-INT $sum = 4 + 1;
+IF ( $input == "5" ) {
+    print($input + "? pues por el culo te la inco");
+}
 
-//print( $sum + 5 );
-print( $sum + " por el culo te la inco" );
+print("OK");

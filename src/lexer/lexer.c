@@ -423,8 +423,19 @@ void parseLexer(const char *input) {
         if (evalTokenText(&pos, ">", TOK_GREATER_THAN)) continue;
 
         //---------------------------
-        // Logical operators
+        // Logical
         //---------------------------
+        if ( strcmp(pos, "IF") == 0 ) {
+
+            addToken( (Token){
+                .type = TOK_LOGICAL_IF,
+                .line = currentLine,
+                .column = startColumn
+            });
+
+            pos +=2;
+            continue;
+        }
         if (evalTokenText(&pos, "&&", TOK_LOGICAL_AND)) continue;
         if (evalTokenText(&pos, "||", TOK_LOGICAL_OR)) continue;
         if (evalTokenText(&pos, "!", TOK_LOGICAL_NOT)) continue;

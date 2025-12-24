@@ -20,6 +20,7 @@ void syntaxError(const char *message, Token token) {
             token.line, token.column, message
     );
     syntax_error_count++;
+    exit(EXIT_FAILURE);
 }
 
 char *astNodeTypeToString(ASTNodeType type) {
@@ -75,6 +76,38 @@ Token currentToken() {
 }
 
 ASTNode *addASTNode(ASTNode *parent, ASTNode child) {
+
+    if ( parent->type == AST_LOGICAL_IF ) {
+
+        // Grow children array if needed
+        if (parent->logicalIf.count >= parent->logicalIf.capacity) {
+            parent->logicalIf.capacity = parent->logicalIf.capacity
+                                         ? parent->logicalIf.capacity * 2
+                                         : 4;
+
+            parent->logicalIf.children = realloc(
+                parent->logicalIf.children,
+                parent->logicalIf.capacity * sizeof(ASTNode *)
+            );
+
+            if (!parent->logicalIf.children) {
+                perror("realloc");
+                exit(EXIT_FAILURE);
+            }
+        }
+
+        // Allocate new node
+        ASTNode *node = malloc(sizeof(ASTNode));
+        if (!node) {
+            perror("malloc");
+            exit(EXIT_FAILURE);
+        }
+
+        *node = child;
+        parent->logicalIf.children[ parent->logicalIf.count++ ] = node;
+        return parent;
+    }
+
     // is not block type
     // if (parent->type != AST_BLOCK && parent->type != AST_PROGRAM)
     //     abort();
@@ -232,21 +265,14 @@ bool evalVariableDefinition(ASTNode *parent, TokenType type, VarType varType) {
     // Parse value
     // Token varValue = currentToken(); nextPos();
     ASTNode *valueNode = parseExpression(0);
-    printf("[VAR] AFTER DEFINITION: %s \n", astNodeTypeToString(valueNode->type));
+    printf("[VAR][VALUE_NODE] DEFINITION: %s \n", astNodeTypeToString(valueNode->type) );
     // TODO check well the tokens, cuz if u pass like "String" this will throw like a normal function call instead of var definition
 
     printf("[VAR] After value expresed: %s\n", lexerTokenToString(currentToken().type));
 
-    if (!valueNode) {
+    if (valueNode->type == AST_ERROR) {
         return false;
     }
-
-    if ( currentToken().type != TOK_PARENTHESIS_CLOSE ) {
-        syntaxError("Expected ')' after value", equals);
-        return false;
-    }
-
-    nextPos();
 
     printf("CURRENCT TOKEN: %s \n", lexerTokenToString(currentToken().type));
     if (currentToken().type != TOK_SEMICOLON) {
@@ -349,6 +375,8 @@ void *parseBody(ASTNode **parent) {
             printf("====== IN BODY?......\n");
             parseBody( &nodeIf );
 
+            nextPos(); // Skipp }
+
             addASTNode( *parent, *nodeIf);
             continue;
         }
@@ -374,7 +402,6 @@ void *parseBody(ASTNode **parent) {
     }
 
     printf("\n\n----------------END BODY-------------\n\n");
-
 }
 
 ASTNode getAST() {

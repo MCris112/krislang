@@ -15,4 +15,6 @@ ASTNode *compileFunctionCall( SymbolTable *table, ASTNode *node );
 
 ASTNode *compileExpression(SymbolTable *symbolTable, ASTNode *node );
 
+bool compileExpressionBoolean( SymbolTable *symbolTable, ASTNode *node );
+
 #endif //KRISLANG_EXPRESSION_H

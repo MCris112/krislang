@@ -116,59 +116,50 @@ void parserPrintASTNode(ASTNode *node, int indent) {
     printf("%s", astNodeTypeToString(node->type));
 
     // Extra info
-    if (node->type == AST_TEXT && node->text) {
-        printf(" (\"%s\")", node->text);
-    }
-
-    if (node->type == AST_NUMBER) {
-        printf(" (%d)", node->number);
-    }
-
-    if (node->type == AST_VARIABLE_DEFINITION) {
-        printf(" (%s)", node->varDecl.name);
+    switch (node->type) {
+        case AST_TEXT: printf(" (\"%s\")", node->text);
+            break;
+        case AST_NUMBER: printf(" (%d)", node->number);
+            break;
+        case AST_VARIABLE_DEFINITION: printf(" (%s)", node->varDecl.name);
+            break;
+        case AST_LOGICAL_IF: printf(" [children=%d]", node->logicalIf.count);
+            break;
+        case AST_FUNCTION_CALL: printf(" (%s)", node->funcCall.name);
+            break;
+        default: break;
     }
 
     printf("\n");
 
     // Recurse depending on node type
     switch (node->type) {
-
-        case AST_PROGRAM:
-            for (int i = 0; i < node->block.count; i++) {
+        case AST_PROGRAM: for (int i = 0; i < node->block.count; i++) {
                 parserPrintASTNode(node->block.children[i], indent + 1);
             }
             break;
-
-        case AST_VARIABLE_DEFINITION:
-            if (node->varDecl.value) {
-                parserPrintASTNode(node->varDecl.value, indent + 1);
-            }
+        case AST_VARIABLE_DEFINITION: parserPrintASTNode(node->varDecl.value, indent + 1);
             break;
-        case AST_CONCAT:
-            // Print left child
-            if (node->binary.left) {
-                parserPrintASTNode(node->binary.left, indent + 1);
-            }
-            // Print right child
-            if (node->binary.right) {
-                parserPrintASTNode(node->binary.right, indent + 1);
-            }
+        case AST_CONCAT: parserPrintASTNode(node->binary.left, indent + 1);
+            parserPrintASTNode(node->binary.right, indent + 1);
             break;
-        case AST_FUNCTION_CALL:
-            printf(" (%s)\n", node->funcCall.name);
-            for (int i = 0; i < node->funcCall.count; i++) {
+        case AST_FUNCTION_CALL: for (int i = 0; i < node->funcCall.count; i++) {
                 parserPrintASTNode(node->funcCall.arguments[i], indent + 1);
             }
             break;
         case AST_LOGICAL_IF:
-            printf("\n");
-            // for (int i = 0; i < node->funcCall.count; i++) {
-            //     parserPrintASTNode(node->funcCall.arguments[i], indent + 1);
-            // }
+            // Print condition
+            for (int i = 0; i < indent + 1; i++) printf(" ");
+            printf("CONDITION:\n");
+            parserPrintASTNode(node->logicalIf.conditional, indent + 2);
+            // Print body
+            for (int i = 0; i < indent + 1; i++) printf(" ");
+            printf("BODY:\n");
+            for (int i = 0; i < node->logicalIf.count; i++) {
+                parserPrintASTNode(node->logicalIf.children[i], indent + 2);
+            }
             break;
-        default:
-            // Leaf nodes: nothing to recurse into
-            break;
+        default: break;
     }
 }
 
@@ -257,4 +248,3 @@ void printSymbolTable(SymbolTable *variableTable) {
 
     printf("====================\n");
 }
-

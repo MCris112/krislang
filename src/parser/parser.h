@@ -106,4 +106,8 @@ char *astNodeTypeToString(ASTNodeType type);
 
 ASTNode *addASTNode(ASTNode *parent, ASTNode child);
 
+ASTNode *parseASTConcat() {
+
+}
+
 #endif //KRISLANG_PARSER_H

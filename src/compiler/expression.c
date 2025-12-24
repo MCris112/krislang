@@ -146,7 +146,9 @@ ASTNode *parseExpression(int deep) {
     //     return empty;
     // }
 
-    switch ( currentToken().type ) {
+    Token token = currentToken();
+
+    switch ( token.type ) {
         case  TOK_TEXT:
             node->type = AST_TEXT;
             node->text = strdup(currentToken().text);
@@ -179,12 +181,21 @@ ASTNode *parseExpression(int deep) {
             break;
     }
 
-    nextPos();
+    // Avoid debug, cuz in parseFunctionCall() already skip one that is the parentesis, so
+    // The program can skip again or will skip the TOK_SEMICOLON
+    if ( token.type != TOK_FUNCTION_CALL )
+        nextPos();
 
     printf("[EXPRESSION] SKIPPING(1): %s\n", lexerTokenToString(currentToken().type));
 
     // Case have error, return the error, dont do more
     if ( node->type == AST_ERROR ) {
+        syntaxError("The code is not recognized", token);
+        return node;
+    }
+
+    if ( currentToken().type == TOK_SEMICOLON ) {
+        printf("[EXPRESSION SKYKING ON : %s ]\n", lexerTokenToString(currentToken().type) );
         return node;
     }
 
@@ -377,7 +388,46 @@ ASTNode *compileExpression(SymbolTable *symbolTable, ASTNode *node) {
         case AST_FUNCTION_CALL:
             return compileFunctionCall(symbolTable, node);
             break;
+        case AST_COMPARE:
+            ASTNode *left = compileExpression(symbolTable, node->binary.left);
+            ASTNode *right = compileExpression(symbolTable, node->binary.right);
+
+            ASTNode *boolean = malloc(sizeof(ASTNode));
+
+            switch ( left->type ) {
+                case AST_TEXT:
+
+                    if ( right->type == AST_TEXT ) {
+                        boolean->type = AST_BOOLEAN;
+                        boolean->boolean = strcmp( left->text, right->text ) == 0;
+                    }else {
+                        boolean->boolean = false;
+                    }
+                break;
+                default:
+                    boolean->boolean = false;
+                    break;
+            }
+
+            return boolean;
+
+            break;
+
         default:
             return node;
     }
+}
+
+bool compileExpressionBoolean( SymbolTable *symbolTable, ASTNode *node ) {
+
+    node = compileExpression(symbolTable, node);
+
+    switch (node->type) {
+        case AST_TEXT:
+            break;
+        case AST_BOOLEAN:
+            return node->boolean;
+
+    }
+    return true;
 }

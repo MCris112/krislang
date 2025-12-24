@@ -62,31 +62,36 @@ static char *join(const char *left, const char *right) {
 
 
 
-
-
-void runCompiler() {
-    initSymbolTable(&variableTable);
-    ASTNode root = getAST();
-
-    parserPrintAST(&root);
-
-    for (int i = 0; i < root.block.count; ++i) {
-        ASTNode *child = root.block.children[i];
+void compileBody(SymbolTable *varTable, ASTNode **children, int childrenLength ) {
+    for (int i = 0; i < childrenLength; ++i) {
+        ASTNode *child = children[i];
 
         switch (child->type) {
             case AST_VARIABLE_DEFINITION:
-                declareVariableByASTNode(variableTable, child);
+                declareVariableByASTNode(varTable, child);
                 break;
             case AST_FUNCTION_CALL:
-                compileFunctionCall( variableTable, child);
+                compileFunctionCall( varTable, child);
                 break;
             case AST_LOGICAL_IF:
+                if ( compileExpressionBoolean( varTable, child->logicalIf.conditional ) ) {
+                    compileBody( varTable, child->logicalIf.children, child->logicalIf.count );
+                }
                 break;
             default:
                 fprintf(stderr, "Unknown AST node type (%s)\n", astNodeTypeToString(child->type));
                 break;
         }
     }
+}
 
-    printSymbolTable(variableTable);
+void runCompiler() {
+    initSymbolTable(&variableTable);
+    ASTNode root = getAST();
+
+    // parserPrintAST(&root);
+
+    compileBody( variableTable, root.block.children, root.block.count );
+
+    // printSymbolTable(variableTable);
 }

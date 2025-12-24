@@ -10,7 +10,6 @@
 #include <string.h>
 
 #include "../debug.h"
-#include "../compiler/expression.h"
 
 int syntax_error_count = 0;
 
@@ -340,44 +339,7 @@ void *parseBody(ASTNode **parent) {
     while (!isEnd() && currentToken().type != TOK_BRACE_CLOSE ) {
 
         if (currentToken().type == TOK_LOGICAL_IF) {
-            printf("IS TOK_LOGICAL_IF!!!..\n");
-
-            nextPos();
-            ASTNode *nodeIf = malloc(sizeof(ASTNode));
-            nodeIf->type = AST_LOGICAL_IF;
-
-            printf("Current token: %s on line: %d \n", lexerTokenToString(currentToken().type), currentToken().line);
-            if (currentToken().type != TOK_PARENTHESIS_OPEN) {
-                syntaxError("Expected '(' to start if", currentToken());
-                continue;
-            }
-
-            nextPos();
-
-            ASTNode *expression = parseExpression(0);
-            nodeIf->logicalIf.conditional = expression;
-
-            printf("Current token: %s on line: %d \n", lexerTokenToString(currentToken().type), currentToken().line);
-            if (currentToken().type != TOK_PARENTHESIS_CLOSE) {
-                syntaxError("Expected ')' after expression", currentToken());
-                continue;
-            }
-
-            nextPos(); // Skip ')'
-
-            if ( currentToken().type != TOK_BRACE_OPEN ) {
-                syntaxError("Expected '{' after expression", currentToken());
-                continue;
-            }
-
-            nextPos(); // Skipp {
-
-            printf("====== IN BODY?......\n");
-            parseBody( &nodeIf );
-
-            nextPos(); // Skipp }
-
-            addASTNode( *parent, *nodeIf);
+            parseNodeIf( parent);
             continue;
         }
 

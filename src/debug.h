@@ -6,7 +6,7 @@
 #define KRISLANG_DEBUG_H
 #include "lexer/lexer.h"
 #include "parser/parser.h"
-#include "compiler/compiler.h"
+#include "runtime/environment.h"
 
 //------------------------------------
 //

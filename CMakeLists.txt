@@ -6,16 +6,16 @@ set(CMAKE_C_STANDARD 17)
 add_executable(KrisLang main.c
         src/lexer/lexer.c
         src/lexer/lexer.h
-        src/compiler/compiler.c
-        src/compiler/compiler.h
         src/parser/parser.c
         src/parser/parser.h
         src/parser/print.c
         src/debug.c
         src/debug.h
-        src/compiler/variables/Variables.c
-        src/compiler/variables/Variables.h
-        src/compiler/expression.c
-        src/compiler/expression.h
+        src/parser/expression.c
         src/parser/node/binary.c
+        src/parser/nodeIf.c
+        src/runtime/runtime.c
+        src/runtime/runtime.h
+        src/runtime/environment.c
+        src/runtime/environment.h
 )

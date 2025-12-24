@@ -202,7 +202,7 @@ void printSymbolTable(SymbolTable *variableTable) {
     }
 
     for (int i = 0; i < variableTable->count; i++) {
-        Symbol *sym = &variableTable->symbols[i];
+        Environment *sym = &variableTable->symbols[i];
 
         printf("name: %s   type: ", sym->name);
 

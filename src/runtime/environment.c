@@ -1,14 +1,56 @@
 //
-// Created by crisv on 12/21/2025.
+// Created by crisv on 12/24/2025.
 //
 
-#include "variables.h"
+#include "environment.h"
 
+#include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-#include "../expression.h"
+#include "runtime.h"
+
+EnvValue *envValueInt(int v) {
+    EnvValue *val = malloc(sizeof(EnvValue));
+    val->type = ENV_INT;
+    val->number = v;
+    return val;
+}
+
+EnvValue *envValueString(const char *s) {
+    EnvValue *val = malloc(sizeof(EnvValue));
+    val->type = ENV_STRING;
+    val->text = strdup(s);
+    return val;
+}
+
+EnvValue *envValueFloat(double v) {
+    EnvValue *val = malloc(sizeof(EnvValue));
+    val->type = ENV_FLOAT;
+    val->decimal = v;
+    return val;
+}
+
+EnvValue *envValueBoolean(bool v) {
+    EnvValue *val = malloc(sizeof(EnvValue));
+    val->type = ENV_BOOL;
+    val->boolean = v;
+    return val;
+}
+
+EnvValue *envValueCharacter(char v) {
+    EnvValue *val = malloc(sizeof(EnvValue));
+    val->type = ENV_CHAR;
+    val->character = v;
+    return val;
+}
+
+EnvValue *envValueNull() {
+    EnvValue *val = malloc(sizeof(EnvValue));
+    val->type = ENV_NULL;
+    return val;
+}
 
 void initSymbolTable(SymbolTable **variableTable) {
     *variableTable = malloc(sizeof(SymbolTable));
@@ -17,37 +59,37 @@ void initSymbolTable(SymbolTable **variableTable) {
     (*variableTable)->capacity = 0;
 }
 
-void declareVariableByASTNode(SymbolTable *variableTable, ASTNode *node) {
+void envDeclare(SymbolTable *variableTable, ASTNode *node) {
     VarType type = node->varDecl.varType;
 
-    ASTNode *valueNode = compileExpression( variableTable, node->varDecl.value);
+    EnvValue *valueNode = runExpression( variableTable, node->varDecl.value);
 
-    VarValue value = {.type = valueNode->type};
+    EnvValue value = {.type = valueNode->type};
     bool abort = false;
 
     switch (type) {
         case VARIABLE_TYPE_STRING:
-            if (valueNode->type != AST_TEXT)
+            if (valueNode->type != ENV_STRING)
                 abort = true;
             else value.text = strdup(valueNode->text);
             break;
         case VARIABLE_TYPE_INT:
-            if (valueNode->type != AST_NUMBER)
+            if (valueNode->type != ENV_INT)
                 abort = true;
             else value.number = valueNode->number;
             break;
         case VARIABLE_TYPE_FLOAT:
-            if (valueNode->type != AST_NUMBER_DECIMAL)
+            if (valueNode->type != ENV_FLOAT)
                 abort = true;
             else value.decimal = valueNode->decimal;
             break;
         case VARIABLE_TYPE_BOOLEAN:
-            if (valueNode->type != AST_BOOLEAN)
+            if (valueNode->type != ENV_BOOL)
                 abort = true;
             else value.boolean = valueNode->boolean;
             break;
         case VARIABLE_TYPE_CHAR:
-            if (valueNode->type != AST_CHAR)
+            if (valueNode->type != ENV_CHAR)
                 abort = true;
             else value.text = strdup(valueNode->text);
             break;
@@ -66,12 +108,12 @@ void declareVariableByASTNode(SymbolTable *variableTable, ASTNode *node) {
         variableTable->capacity = variableTable->capacity ? variableTable->capacity * 2 : 8;
         variableTable->symbols = realloc(
             variableTable->symbols,
-            variableTable->capacity * sizeof(Symbol)
+            variableTable->capacity * sizeof(Environment)
         );
     }
 
     // Assign symbol
-    Symbol symbol = {0};
+    Environment symbol = {0};
     symbol.name = strdup(node->varDecl.name);
     symbol.type = type;
     symbol.value = value;
@@ -79,16 +121,27 @@ void declareVariableByASTNode(SymbolTable *variableTable, ASTNode *node) {
     variableTable->symbols[variableTable->count++] = symbol;
 }
 
-// char *getVariableValue(SymbolTable *variableTable, char *name) {
+
+EnvValue *envGetValue(SymbolTable *variableTable, char *name) {
+    for (int i = 0; i < variableTable->count; i++) {
+        Environment *sym = &variableTable->symbols[i];
+        if (strcmp(sym->name, name) == 0) {
+            return &sym->value;
+        }
+    }
+    return NULL;
+}
+
+// char *envGetValue(SymbolTable *variableTable, char *name) {
 //     if (variableTable->count == 0) {
 //         return NULL;
 //     }
 //
 //     for (int i = 0; i < variableTable->count; i++) {
-//         Symbol *sym = &variableTable->symbols[i];
+//         Environment *sym = &variableTable->symbols[i];
 //
 //         if (strcmp(sym->name, name) == 0) {
-//             // Convert VarValue → heap string, like compileExpr does
+//             // Convert EnvValue → heap string, like compileExpr does
 //             if (sym->value.type == AST_TEXT) {
 //                 return strdup(sym->value.text ? sym->value.text : "");
 //             }
@@ -105,62 +158,3 @@ void declareVariableByASTNode(SymbolTable *variableTable, ASTNode *node) {
 //     return strdup(""); // or NULL, but then handle NULL in compileExpr
 // }
 
-VarValue *getVariableValue(SymbolTable *variableTable, char *name) {
-    for (int i = 0; i < variableTable->count; i++) {
-        Symbol *sym = &variableTable->symbols[i];
-        if (strcmp(sym->name, name) == 0) {
-            return &sym->value;
-        }
-    }
-    return NULL;
-}
-
-ASTNode *astNodeFromVarValue(const VarValue *value) {
-    if (!value) return NULL;
-
-    ASTNode *node = malloc(sizeof(ASTNode));
-    memset(node, 0, sizeof(ASTNode));
-
-    node->type = value->type;
-
-    switch (value->type) {
-        case AST_TEXT:
-            node->text = strdup(value->text);
-            break;
-
-        case AST_NUMBER:
-            node->number = value->number;
-            break;
-
-        case AST_NUMBER_DECIMAL:
-            node->decimal = value->decimal;
-            break;
-
-        case AST_BOOLEAN:
-            node->boolean = value->boolean;
-            break;
-
-        case AST_CHAR:
-            node->text = strdup(value->text); // 1‑char string
-            break;
-
-        default:
-            node->type = AST_ERROR;
-            break;
-    }
-
-    return node;
-}
-
-
-ASTNode *getVariableNode(SymbolTable *table, const char *name) {
-    for (int i = 0; i < table->count; i++) {
-        Symbol *sym = &table->symbols[i];
-
-        if (strcmp(sym->name, name) == 0) {
-            return astNodeFromVarValue(&sym->value);
-        }
-    }
-
-    return NULL;
-}

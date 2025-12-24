@@ -1,9 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "src/debug.h"
 #include "src/lexer/lexer.h"
-#include "src/compiler/compiler.h"
+#include "src/runtime/runtime.h"
 
 
 int main(int argc, char *argv[]) {
@@ -46,7 +45,7 @@ int main(int argc, char *argv[]) {
 
     parseLexer(buffer);
 
-    runCompiler();
+    runtime();
 
     free(buffer);
     return 0;

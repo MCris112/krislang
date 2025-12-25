@@ -2,15 +2,20 @@
 // Created by crisv on 12/24/2025.
 //
 
+#include <stdio.h>
 #include <stdlib.h>
 
 #include "parser.h"
+#include "../debug.h"
 
-void parseNodeIf(ASTNode **parent) {
+void parseNodeIf(ASTBlock *parent) {
     nextPos(); // Skip TOK_LOGICAL_IF
 
     ASTNode *nodeIf = malloc(sizeof(ASTNode));
     nodeIf->type = AST_LOGICAL_IF;
+    // ALWAYS initialize both blocks
+    nodeIf->logicalIf.bodyBlock = (ASTBlock){.children = NULL, .count = 0, .capacity = 0};
+    nodeIf->logicalIf.elseBlock = (ASTBlock){.children = NULL, .count = 0, .capacity = 0};
 
     if (currentToken().type != TOK_PARENTHESIS_OPEN) {
         syntaxError("Expected '(' to start if", currentToken());
@@ -29,16 +34,42 @@ void parseNodeIf(ASTNode **parent) {
 
     nextPos(); // Skip ')'
 
-    if ( currentToken().type != TOK_BRACE_OPEN ) {
+    if (currentToken().type != TOK_BRACE_OPEN) {
         syntaxError("Expected '{' after expression", currentToken());
         return;
     }
 
     nextPos(); // Skipp {
 
-    parseBody( &nodeIf );
+    parseBody(&nodeIf->logicalIf.bodyBlock);
+
+    if (currentToken().type != TOK_BRACE_CLOSE) {
+        syntaxError("Expected '}' after body content", currentToken());
+        return;
+    }
 
     nextPos(); // Skipp }
 
-    addASTNode( *parent, *nodeIf);
+    if (currentToken().type == TOK_LOGICAL_ELSE) {
+        nextPos();
+
+        if (currentToken().type != TOK_BRACE_OPEN) {
+            syntaxError("Expected '{' after expression", currentToken());
+            return;
+        }
+
+        nextPos(); // Skipp {
+
+        parseBody(&nodeIf->logicalIf.elseBlock);
+        // parseBody( &blockElse );
+
+        if (currentToken().type != TOK_BRACE_CLOSE) {
+            syntaxError("Expected '}' after body content", currentToken());
+            return;
+        }
+
+        nextPos(); // Skipp }
+    }
+
+    addASTNode(parent, *nodeIf);
 }

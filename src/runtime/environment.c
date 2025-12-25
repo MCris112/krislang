@@ -131,30 +131,3 @@ EnvValue *envGetValue(SymbolTable *variableTable, char *name) {
     }
     return NULL;
 }
-
-// char *envGetValue(SymbolTable *variableTable, char *name) {
-//     if (variableTable->count == 0) {
-//         return NULL;
-//     }
-//
-//     for (int i = 0; i < variableTable->count; i++) {
-//         Environment *sym = &variableTable->symbols[i];
-//
-//         if (strcmp(sym->name, name) == 0) {
-//             // Convert EnvValue → heap string, like compileExpr does
-//             if (sym->value.type == AST_TEXT) {
-//                 return strdup(sym->value.text ? sym->value.text : "");
-//             }
-//             if (sym->value.type == AST_NUMBER) {
-//                 char buf[32];
-//                 snprintf(buf, sizeof(buf), "%d", sym->value.number);
-//                 return strdup(buf);
-//             }
-//             return strdup("");
-//         }
-//     }
-//
-//     // Not found
-//     return strdup(""); // or NULL, but then handle NULL in compileExpr
-// }
-

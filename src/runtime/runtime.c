@@ -9,6 +9,7 @@
 #include <string.h>
 
 #include "environment.h"
+#include "../debug.h"
 
 
 //-----------------------------------
@@ -66,7 +67,7 @@ EnvValue *runFunctionCall(SymbolTable *table, ASTNode *node) {
         fgets(buffer, sizeof(buffer), stdin);
         buffer[strcspn(buffer, "\n")] = '\0'; // remove newline
 
-        return envValueString( buffer );
+        return envValueString(buffer);
     }
 
     printf("Unknown function: %s\n", node->funcCall.name);
@@ -91,17 +92,16 @@ EnvValue *runExpression(SymbolTable *symbolTable, ASTNode *node) {
             EnvValue *right = runExpression(symbolTable, node->binary.right);
 
             if (left->type == ENV_INT && right->type == ENV_INT) {
-                return envValueInt( left->number + right->number );
+                return envValueInt(left->number + right->number);
             }
 
             if (left->type == ENV_STRING && right->type == ENV_INT) {
                 char buffer[64];
                 snprintf(buffer, sizeof(buffer), "%s%d", left->text, right->number);
-                return envValueString( buffer );
+                return envValueString(buffer);
             }
 
             if (left->type == ENV_STRING && right->type == ENV_STRING) {
-
                 // Getting size of each one
                 size_t lenA = strlen(left->text);
                 size_t lenB = strlen(right->text);
@@ -111,11 +111,10 @@ EnvValue *runExpression(SymbolTable *symbolTable, ASTNode *node) {
                 memcpy(buf, left->text, lenA);
                 memcpy(buf + lenA, right->text, lenB + 1);
 
-                return envValueString( buf );
+                return envValueString(buf);
             }
 
             if (left->type == ENV_STRING && right->type == ENV_CHAR) {
-
                 // Getting size of each one
                 size_t lenA = strlen(left->text);
                 size_t lenB = strlen(right->text);
@@ -125,14 +124,14 @@ EnvValue *runExpression(SymbolTable *symbolTable, ASTNode *node) {
                 memcpy(buf, left->text, lenA);
                 memcpy(buf + lenA, right->text, lenB + 1);
 
-                return envValueString( buf);
+                return envValueString(buf);
             }
 
 
             if (left->type == ENV_INT && right->type == ENV_STRING) {
                 char buffer[64];
                 snprintf(buffer, sizeof(buffer), "%d%s", left->number, right->text);
-                return envValueString( buffer );
+                return envValueString(buffer);
             }
             // TODO: handle string concat, variable concat, etc.
 
@@ -148,8 +147,8 @@ EnvValue *runExpression(SymbolTable *symbolTable, ASTNode *node) {
 
             bool boolean = false;
             switch (left->type) {
-                case AST_TEXT:
-                    if (right->type == ENV_STRING ){
+                case ENV_STRING:
+                    if (right->type == ENV_STRING) {
                         boolean = strcmp(left->text, right->text) == 0;
                     }
                     break;
@@ -168,21 +167,17 @@ bool runExpressionBoolean(SymbolTable *symbolTable, ASTNode *node) {
     EnvValue *value = runExpression(symbolTable, node);
 
     switch (value->type) {
-        case ENV_STRING:
-            break;
-        case ENV_BOOL:
-            return node->boolean;
-        default:
-            return false;
+        case ENV_BOOL: return value->boolean;
+        case ENV_INT: return value->number != 0;
+        case ENV_STRING: return value->text && value->text[0] != '\0';
+        default: return false;
     }
-
-    return true;
 }
 
 
-void runBody(SymbolTable *varTable, ASTNode **children, int childrenLength) {
-    for (int i = 0; i < childrenLength; ++i) {
-        ASTNode *child = children[i];
+void runBody(SymbolTable *varTable, ASTBlock *block) {
+    for (int i = 0; i < block->count; ++i) {
+        ASTNode *child = block->children[i];
 
         switch (child->type) {
             case AST_VARIABLE_DEFINITION:
@@ -193,8 +188,8 @@ void runBody(SymbolTable *varTable, ASTNode **children, int childrenLength) {
                 break;
             case AST_LOGICAL_IF:
                 if (runExpressionBoolean(varTable, child->logicalIf.conditional)) {
-                    runBody(varTable, child->logicalIf.children, child->logicalIf.count);
-                }
+                    runBody(varTable, &child->logicalIf.bodyBlock);
+                } else if ( child->logicalIf.elseBlock.count > 0 ) { runBody(varTable, &child->logicalIf.elseBlock); }
                 break;
             default:
                 fprintf(stderr, "Unknown AST node type (%s)\n", astNodeTypeToString(child->type));
@@ -213,7 +208,7 @@ void runtime() {
 
     printf("\n\n\n\n\n");
 
-    runBody(variableTable, root.block.children, root.block.count);
+    runBody(variableTable, &root.block);
 
-    // printSymbolTable(variableTable);
+    printSymbolTable(variableTable);
 }

@@ -36,6 +36,7 @@ const char *lexerTokenToString(TokenType type) {
 
         // LOGICAL
         case TOK_LOGICAL_IF: return "TOK_LOGICAL_IF";
+        case TOK_LOGICAL_ELSE: return "TOK_LOGICAL_ELSE";
         case TOK_LOGICAL_AND: return "TOK_LOGICAL_AND";
         case TOK_LOGICAL_OR: return "TOK_LOGICAL_OR";
         case TOK_LOGICAL_NOT: return "TOK_LOGICAL_NOT";
@@ -123,7 +124,10 @@ void parserPrintASTNode(ASTNode *node, int indent) {
             break;
         case AST_VARIABLE_DEFINITION: printf(" (%s)", node->varDecl.name);
             break;
-        case AST_LOGICAL_IF: printf(" [children=%d]", node->logicalIf.count);
+        case AST_LOGICAL_IF:
+            printf(" [Body=%d Else=%d]", node->logicalIf.bodyBlock.count, node->logicalIf.elseBlock.count);
+            break;
+
             break;
         case AST_FUNCTION_CALL: printf(" (%s)", node->funcCall.name);
             break;
@@ -147,18 +151,34 @@ void parserPrintASTNode(ASTNode *node, int indent) {
                 parserPrintASTNode(node->funcCall.arguments[i], indent + 1);
             }
             break;
-        case AST_LOGICAL_IF:
-            // Print condition
-            for (int i = 0; i < indent + 1; i++) printf(" ");
+        case AST_LOGICAL_IF: {
+            // CONDITION
+            for (int i = 0; i < indent + 1; i++) printf("  ");
             printf("CONDITION:\n");
-            parserPrintASTNode(node->logicalIf.conditional, indent + 2);
-            // Print body
-            for (int i = 0; i < indent + 1; i++) printf(" ");
+            if (node->logicalIf.conditional) {
+                parserPrintASTNode(node->logicalIf.conditional, indent + 2);
+            } else {
+                for (int i = 0; i < indent + 2; i++) printf("  ");
+                printf("<NULL>\n");
+            }
+
+            // BODY
+            for (int i = 0; i < indent + 1; i++) printf("  ");
             printf("BODY:\n");
-            for (int i = 0; i < node->logicalIf.count; i++) {
-                parserPrintASTNode(node->logicalIf.children[i], indent + 2);
+            for (int i = 0; i < node->logicalIf.bodyBlock.count; i++) {
+                parserPrintASTNode(node->logicalIf.bodyBlock.children[i], indent + 2);
+            }
+
+            // ELSE BODY
+            if (node->logicalIf.elseBlock.count > 0) {
+                for (int i = 0; i < indent + 1; i++) printf("  ");
+                printf("ELSE:\n");
+                for (int i = 0; i < node->logicalIf.elseBlock.count; i++) {
+                    parserPrintASTNode(node->logicalIf.elseBlock.children[i], indent + 2);
+                }
             }
             break;
+        }
         default: break;
     }
 }
@@ -232,10 +252,10 @@ void printSymbolTable(SymbolTable *variableTable) {
 
         // Print runtime value
         switch (sym->value.type) {
-            case AST_TEXT:
+            case ENV_STRING:
                 printf("\"%s\"", sym->value.text);
                 break;
-            case AST_NUMBER:
+            case ENV_INT:
                 printf("%d", sym->value.number);
                 break;
             default:

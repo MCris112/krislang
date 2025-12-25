@@ -74,55 +74,55 @@ Token currentToken() {
     return getTokens()[current];
 }
 
-ASTNode *addASTNode(ASTNode *parent, ASTNode child) {
+ASTNode *addASTNode(ASTBlock *parent, ASTNode child) {
 
-    if ( parent->type == AST_LOGICAL_IF ) {
-
-        // Grow children array if needed
-        if (parent->logicalIf.count >= parent->logicalIf.capacity) {
-            parent->logicalIf.capacity = parent->logicalIf.capacity
-                                         ? parent->logicalIf.capacity * 2
-                                         : 4;
-
-            parent->logicalIf.children = realloc(
-                parent->logicalIf.children,
-                parent->logicalIf.capacity * sizeof(ASTNode *)
-            );
-
-            if (!parent->logicalIf.children) {
-                perror("realloc");
-                exit(EXIT_FAILURE);
-            }
-        }
-
-        // Allocate new node
-        ASTNode *node = malloc(sizeof(ASTNode));
-        if (!node) {
-            perror("malloc");
-            exit(EXIT_FAILURE);
-        }
-
-        *node = child;
-        parent->logicalIf.children[ parent->logicalIf.count++ ] = node;
-        return parent;
-    }
+    // if ( parent->type == AST_LOGICAL_IF ) {
+    //
+    //     // Grow children array if needed
+    //     if (parent->logicalIf.count >= parent->logicalIf.capacity) {
+    //         parent->logicalIf.capacity = parent->logicalIf.capacity
+    //                                      ? parent->logicalIf.capacity * 2
+    //                                      : 4;
+    //
+    //         parent->logicalIf.children = realloc(
+    //             parent->logicalIf.children,
+    //             parent->logicalIf.capacity * sizeof(ASTNode *)
+    //         );
+    //
+    //         if (!parent->logicalIf.children) {
+    //             perror("realloc");
+    //             exit(EXIT_FAILURE);
+    //         }
+    //     }
+    //
+    //     // Allocate new node
+    //     ASTNode *node = malloc(sizeof(ASTNode));
+    //     if (!node) {
+    //         perror("malloc");
+    //         exit(EXIT_FAILURE);
+    //     }
+    //
+    //     *node = child;
+    //     parent->logicalIf.children[ parent->logicalIf.count++ ] = node;
+    //     return parent;
+    // }
 
     // is not block type
     // if (parent->type != AST_BLOCK && parent->type != AST_PROGRAM)
     //     abort();
 
     // Grow children array if needed
-    if (parent->block.count >= parent->block.capacity) {
-        parent->block.capacity = parent->block.capacity
-                                     ? parent->block.capacity * 2
+    if (parent->count >= parent->capacity) {
+        parent->capacity = parent->capacity
+                                     ? parent->capacity * 2
                                      : 4;
 
-        parent->block.children = realloc(
-            parent->block.children,
-            parent->block.capacity * sizeof(ASTNode *)
+        parent->children = realloc(
+            parent->children,
+            parent->capacity * sizeof(ASTNode *)
         );
 
-        if (!parent->block.children) {
+        if (!parent->children) {
             perror("realloc");
             exit(EXIT_FAILURE);
         }
@@ -137,7 +137,7 @@ ASTNode *addASTNode(ASTNode *parent, ASTNode child) {
 
     *node = child;
 
-    parent->block.children[parent->block.count++] = node;
+    parent->children[parent->count++] = node;
     return node;
 }
 
@@ -211,7 +211,7 @@ bool isVariableDefinition() {
 }
 
 
-bool evalVariableDefinition(ASTNode *parent, TokenType type, VarType varType) {
+bool evalVariableDefinition(ASTBlock *parent, TokenType type, VarType varType) {
     Token tok = currentToken();
     printf("==== SET VARIABLE ON: %s \n", lexerTokenToString(tok.type) );
     if (tok.type != type) {
@@ -293,7 +293,7 @@ bool evalVariableDefinition(ASTNode *parent, TokenType type, VarType varType) {
         }
     };
 
-    addASTNode(parent, definition);
+    addASTNode( parent, definition);
     return true;
 }
 
@@ -334,28 +334,28 @@ bool evalVariableDefinition(ASTNode *parent, TokenType type, VarType varType) {
 //     addASTNode(parent, *node);
 // }
 
-void *parseBody(ASTNode **parent) {
+void *parseBody(ASTBlock *parent) {
     printf("----------------NEW BODY-------------\n\n");
     while (!isEnd() && currentToken().type != TOK_BRACE_CLOSE ) {
 
         if (currentToken().type == TOK_LOGICAL_IF) {
-            parseNodeIf( parent);
+            parseNodeIf( parent );
             continue;
         }
 
         // 2. VARIABLE DEFINITIONS
         if (isVariableDefinition()) {
-            if (evalVariableDefinition(*parent, TOK_VARIABLE_TYPE_STRING, VARIABLE_TYPE_STRING)) continue;
-            if (evalVariableDefinition(*parent, TOK_VARIABLE_TYPE_INT, VARIABLE_TYPE_INT)) continue;
-            if (evalVariableDefinition(*parent, TOK_VARIABLE_TYPE_BOOLEAN, VARIABLE_TYPE_BOOLEAN)) continue;
-            if (evalVariableDefinition(*parent, TOK_VARIABLE_TYPE_FLOAT, VARIABLE_TYPE_FLOAT)) continue;
-            if (evalVariableDefinition(*parent, TOK_VARIABLE_TYPE_CHAR, VARIABLE_TYPE_CHAR)) continue;
+            if (evalVariableDefinition( parent, TOK_VARIABLE_TYPE_STRING, VARIABLE_TYPE_STRING)) continue;
+            if (evalVariableDefinition( parent, TOK_VARIABLE_TYPE_INT, VARIABLE_TYPE_INT)) continue;
+            if (evalVariableDefinition( parent, TOK_VARIABLE_TYPE_BOOLEAN, VARIABLE_TYPE_BOOLEAN)) continue;
+            if (evalVariableDefinition( parent, TOK_VARIABLE_TYPE_FLOAT, VARIABLE_TYPE_FLOAT)) continue;
+            if (evalVariableDefinition( parent, TOK_VARIABLE_TYPE_CHAR, VARIABLE_TYPE_CHAR)) continue;
         }
 
         if (currentToken().type == TOK_FUNCTION_CALL) {
             printf("IS TOK_FUNCTION CALL: TOKEN: %s  \n \n", lexerTokenToString(currentToken().type));
             ASTNode *func = parseFunctionCall();
-            addASTNode( *parent, *func);
+            addASTNode( parent, *func);
             continue;
         }
 
@@ -373,7 +373,7 @@ ASTNode getAST() {
     parent->block.capacity = 0;
     parent->block.count = 0;
 
-    parseBody( &parent );
+    parseBody( &parent->block );
 
     parserPrintAST( parent );
 

@@ -39,23 +39,38 @@ typedef enum {
     VARIABLE_TYPE_CHAR,
 } VarType;
 
+
+
+typedef struct {
+    struct ASTNode **children;
+    int count;
+    int capacity;
+} ASTBlock;
+
+
 typedef struct ASTNode {
     ASTNodeType type;
 
     union {
-        // Literals
+        /* -------------------------
+         * Literals
+         * ------------------------- */
         char *text;
         int number;
         double decimal;
         bool boolean;
 
-        // Binary operations
+        /* -------------------------
+         * Binary operations
+         * ------------------------- */
         struct {
             struct ASTNode *left;
             struct ASTNode *right;
         } binary;
 
-        // Variable declaration
+        /* -------------------------
+         * Variable declaration
+         * ------------------------- */
         struct {
             VarType varType;
             char *name;
@@ -63,13 +78,14 @@ typedef struct ASTNode {
             int size; /* // -1 means autosize */
         } varDecl;
 
-        // Statements
-        struct {
-            struct ASTNode **children;
-            int count;
-            int capacity;
-        } block;
+        /* -------------------------
+         * Block of statements
+         * ------------------------- */
+        ASTBlock block;
 
+        /* -------------------------
+         * Function call
+         * ------------------------- */
         struct {
             char *name;
             struct ASTNode **arguments;
@@ -77,14 +93,21 @@ typedef struct ASTNode {
             int capacity;
         } funcCall;
 
+        /* -------------------------
+         * If / Else
+         * ------------------------- */
         struct {
             struct ASTNode *conditional;
-            struct ASTNode **children;
-            int count;
-            int capacity;
+
+            // body of if
+            ASTBlock bodyBlock;
+
+            // else-block (optional)
+            ASTBlock elseBlock;
         } logicalIf;
     };
 } ASTNode;
+
 
 void syntaxError( const char *message, Token token );
 
@@ -104,12 +127,12 @@ void parserPrintAST(ASTNode *root);
 
 char *astNodeTypeToString(ASTNodeType type);
 
-ASTNode *addASTNode(ASTNode *parent, ASTNode child);
+ASTNode *addASTNode(ASTBlock *parent, ASTNode child);
 
 ASTNode *parseASTConcat();
-void parseNodeIf(ASTNode **parent);
+void parseNodeIf(ASTBlock *parent);
 
-void *parseBody(ASTNode **parent);
+void *parseBody(ASTBlock *parent);
 
 ASTNode *parseExpression(int deep );
 

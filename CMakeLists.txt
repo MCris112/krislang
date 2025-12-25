@@ -8,7 +8,6 @@ add_executable(KrisLang main.c
         src/lexer/lexer.h
         src/parser/parser.c
         src/parser/parser.h
-        src/parser/print.c
         src/debug.c
         src/debug.h
         src/parser/expression.c

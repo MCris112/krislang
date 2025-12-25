@@ -36,6 +36,7 @@ typedef enum {
     // Logical
     //---------------------------
     TOK_LOGICAL_IF,
+    TOK_LOGICAL_ELSE,
     TOK_LOGICAL_AND,
     TOK_LOGICAL_OR,
     TOK_LOGICAL_NOT,

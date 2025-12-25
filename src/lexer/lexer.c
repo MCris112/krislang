@@ -436,6 +436,18 @@ void parseLexer(const char *input) {
             pos +=2;
             continue;
         }
+
+        if ( strncmp(pos, "ELSE", 4) == 0 ) {
+
+            addToken( (Token){
+                .type = TOK_LOGICAL_ELSE,
+                .line = currentLine,
+                .column = startColumn
+            });
+
+            pos +=4;
+            continue;
+        }
         if (evalTokenText(&pos, "&&", TOK_LOGICAL_AND)) continue;
         if (evalTokenText(&pos, "||", TOK_LOGICAL_OR)) continue;
         if (evalTokenText(&pos, "!", TOK_LOGICAL_NOT)) continue;

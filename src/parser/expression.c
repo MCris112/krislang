@@ -146,6 +146,11 @@ ASTNode *parseExpression(int deep) {
     Token token = currentToken();
 
     switch (token.type) {
+        case TOK_VARIABLE_TYPE_INT:
+            ASTNode literal = parseTypeLiteral();
+            node->type = literal.type;
+            node->literal = literal.literal;
+            break;
         case TOK_TEXT:
             node->type = AST_TEXT;
             node->text = strdup(currentToken().text);

@@ -15,11 +15,14 @@ typedef enum {
     AST_FUNCTION_CALL,
     AST_LOGICAL_IF,
 
+    AST_TYPE_LITERAL,
     AST_TEXT,
     AST_NUMBER,
     AST_NUMBER_DECIMAL,
     AST_BOOLEAN,
     AST_CHAR,
+    AST_VOID,
+    AST_UNKNOWN,
     AST_ERROR,
 
     AST_CONCAT, // CONCAT CERTAIN VALUES
@@ -37,6 +40,8 @@ typedef enum {
     VARIABLE_TYPE_FLOAT,
     VARIABLE_TYPE_BOOLEAN,
     VARIABLE_TYPE_CHAR,
+    VARIABLE_TYPE_UNKNOWN,
+    VARIABLE_TYPE_NEVER
 } VarType;
 
 
@@ -59,6 +64,7 @@ typedef struct ASTNode {
         int number;
         double decimal;
         bool boolean;
+        ASTNodeType literal; // TODO here i have to store the size too
 
         /* -------------------------
          * Binary operations
@@ -135,6 +141,8 @@ ASTNode *parseASTConcat();
 void parseNodeIf(ASTBlock *parent);
 
 void *parseBody(ASTBlock *parent);
+
+ASTNode parseTypeLiteral();
 
 ASTNode *parseExpression(int deep );
 

@@ -1,7 +1,7 @@
-STRING $input = input("Dime un numero?");
+INT $input = input("Dime un numero?", INT);
 
-IF ( awawa )
-    print( $input + "? por el culo te la inco" );
+IF ( $input ){
+    print( $input + "? awadkjdsf" );
 } ELSE {
     print("IN ELSE");
 }

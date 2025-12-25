@@ -239,6 +239,112 @@ bool isVariableDefinition() {
            t == TOK_VARIABLE_TYPE_VOID;
 }
 
+ASTNodeType fromTokVariableTypeToASTNodeType(TokenType type) {
+    switch (type) {
+        case TOK_VARIABLE_TYPE_INT: return AST_NUMBER;
+        case TOK_VARIABLE_TYPE_STRING: return AST_VARIABLE_CAST;
+        case TOK_VARIABLE_TYPE_BOOLEAN: return AST_BOOLEAN;
+        case TOK_VARIABLE_TYPE_FLOAT : return AST_NUMBER_DECIMAL;
+        case TOK_VARIABLE_TYPE_CHAR: return AST_CHAR;
+        case TOK_VARIABLE_TYPE_VOID: return AST_VOID;
+        default: return AST_UNKNOWN;
+    }
+}
+
+ASTNode parseTypeLiteral() {
+    Token type = currentToken();
+
+
+    Token varName = currentToken();
+    int size = -1;
+
+    if ( varName.type == TOK_PARENTHESIS_OPEN ) {
+        nextPos(); // SKIP '('
+
+        Token sizeTok = currentToken();
+        evalExpectedToken(sizeTok, TOK_NUMBER, "Expected size inside TYPE(...)");
+
+        size = sizeTok.number;
+        nextPos();
+
+        evalExpectedToken(currentToken(), TOK_PARENTHESIS_CLOSE, "Expected ')' after size");
+
+        nextPos(); // skip ')'
+    }
+
+    if ( currentToken().type != TOK_VARIABLE ) {
+
+        ASTNodeType literal = fromTokVariableTypeToASTNodeType(type.type);
+
+        if ( literal ==  AST_UNKNOWN ) {
+            syntaxError( "Something went wrong..., expected a variable type, but UNKNOW returned", type );
+        }
+
+        return (ASTNode){
+            .type = AST_TYPE_LITERAL,
+            .literal = literal
+        };
+    }
+    nextPos();
+
+    /*
+    *if (isVariableDefinition()) {
+            if (evalVariableDefinition(parent, TOK_VARIABLE_TYPE_STRING, VARIABLE_TYPE_STRING)) continue;
+            if (evalVariableDefinition(parent, TOK_VARIABLE_TYPE_INT, VARIABLE_TYPE_INT)) continue;
+            if (evalVariableDefinition(parent, TOK_VARIABLE_TYPE_BOOLEAN, VARIABLE_TYPE_BOOLEAN)) continue;
+            if (evalVariableDefinition(parent, TOK_VARIABLE_TYPE_FLOAT, VARIABLE_TYPE_FLOAT)) continue;
+            if (evalVariableDefinition(parent, TOK_VARIABLE_TYPE_CHAR, VARIABLE_TYPE_CHAR)) continue;
+        }
+     *
+     */
+
+    VarType varType;
+    switch ( type.type ) {
+        case TOK_VARIABLE_TYPE_STRING: varType = VARIABLE_TYPE_STRING; break;
+        case TOK_VARIABLE_TYPE_INT: varType = VARIABLE_TYPE_INT; break;
+        case TOK_VARIABLE_TYPE_BOOLEAN: varType = VARIABLE_TYPE_BOOLEAN; break;
+        case TOK_VARIABLE_TYPE_CHAR: varType = VARIABLE_TYPE_CHAR; break;
+        case TOK_VARIABLE_TYPE_FLOAT: varType = VARIABLE_TYPE_FLOAT; break;
+        case TOK_VARIABLE_TYPE_VOID: varType = VARIABLE_TYPE_NEVER; break;
+        default: varType = VARIABLE_TYPE_UNKNOWN; break;
+    }
+
+    // Now expect variable name
+    varName = currentToken();
+    nextPos();
+    //if (!evalExpectedToken(varName, TOK_VARIABLE, "Variable name expected"))
+    //    return false;
+
+    // Expect '='
+    Token equals = currentToken();
+    nextPos();
+    evalExpectedToken(equals, TOK_EQUALS, "Expected '='");
+
+    // Parse value
+    // Token varValue = currentToken(); nextPos();
+    ASTNode *valueNode = parseExpression(0);
+    printf("[VAR][VALUE_NODE] DEFINITION: %s \n", astNodeTypeToString(valueNode->type));
+    // TODO check well the tokens, cuz if u pass like "String" this will throw like a normal function call instead of var definition
+
+    printf("CURRENCT TOKEN: %s \n", lexerTokenToString(currentToken().type));
+    if (currentToken().type != TOK_SEMICOLON) {
+        syntaxError("Semicolon expected", beforeToken());
+    }
+
+    nextPos();
+
+    ASTNode definition = (ASTNode){
+        .type = AST_VARIABLE_DEFINITION,
+        .varDecl = {
+            .varType = varType,
+            .name = varName.text,
+            .value = valueNode,
+            .size = size
+        }
+    };
+
+    return definition;
+}
 
 bool evalVariableDefinition(ASTBlock *parent, TokenType type, VarType varType) {
     Token tok = currentToken();

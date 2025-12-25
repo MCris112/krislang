@@ -54,6 +54,7 @@ EnvValue *runFunctionCall(SymbolTable *table, ASTNode *node) {
     }
 
     if (strcmp(node->funcCall.name, "input") == 0) {
+        // First args to show if has show on console
         EnvValue *result = runExpression(table, node->funcCall.arguments[0]);
 
         // TODO check correct buffer
@@ -67,6 +68,16 @@ EnvValue *runFunctionCall(SymbolTable *table, ASTNode *node) {
         fgets(buffer, sizeof(buffer), stdin);
         buffer[strcspn(buffer, "\n")] = '\0'; // remove newline
 
+        if ( node->funcCall.count > 1 ) {
+            EnvValue *argType = runExpression( table, node->funcCall.arguments[1]);
+
+            switch ( argType->type ) {
+                case ENV_STRING:
+                    break;
+                case ENV_INT:
+                    return envValueInt( buffer );
+            }
+        }
         return envValueString(buffer);
     }
 

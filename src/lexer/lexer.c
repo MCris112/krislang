@@ -58,8 +58,11 @@ bool evalTokenVariable(char *typeName, const char **reference, TokenType type) {
         return false;
 
     // Allow: TYPE(8), TYPE $var
-    if (pos[len] != ' ' && pos[len] != '(')
+    /*
+     if (pos[len] != ' ' && pos[len] != '(') {
+
         return false;
+    }*/
 
     addToken((Token){
         .type = type,

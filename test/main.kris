@@ -1,6 +1,6 @@
 STRING $input = input("Dime un numero?");
 
-IF ( $input ) {
+IF ( awawa )
     print( $input + "? por el culo te la inco" );
 } ELSE {
     print("IN ELSE");

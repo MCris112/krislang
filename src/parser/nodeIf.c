@@ -2,6 +2,7 @@
 // Created by crisv on 12/24/2025.
 //
 
+#include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -9,6 +10,7 @@
 #include "../debug.h"
 
 void parseNodeIf(ASTBlock *parent) {
+    printf("TOK_LOGICAL_IF====== \n");
     nextPos(); // Skip TOK_LOGICAL_IF
 
     ASTNode *nodeIf = malloc(sizeof(ASTNode));
@@ -18,13 +20,22 @@ void parseNodeIf(ASTBlock *parent) {
     nodeIf->logicalIf.elseBlock = (ASTBlock){.children = NULL, .count = 0, .capacity = 0};
 
     if (currentToken().type != TOK_PARENTHESIS_OPEN) {
-        syntaxError("Expected '(' to start if", currentToken());
+        syntaxError("Expected '(' to start if", beforeToken() );
         return;
     }
 
     nextPos();
 
+    /*
+    if (currentToken().type == TOK_PARENTHESIS_CLOSE) {
+        syntaxError("Empty IF condition", currentToken() );
+    }*/
+
+
     ASTNode *expression = parseExpression(0);
+
+    parserPrintASTNode(expression, 0);
+
     nodeIf->logicalIf.conditional = expression;
 
     if (currentToken().type != TOK_PARENTHESIS_CLOSE) {

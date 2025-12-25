@@ -13,8 +13,8 @@
 #include "../debug.h"
 
 // For error lines
-int currentLine = 1;
-int currentColumn = 1;
+int currentLine = 0;
+int currentColumn = 0;
 
 Token *tokens = NULL;
 int tokenCount = 0;
@@ -136,18 +136,24 @@ bool evalTokenText(const char **reference, char *content, const TokenType type) 
     return true;
 }
 
+const char *code;
+
+const char *getCode() {
+    return code;
+}
 /**
  * Main important component of compiler, take actual text into TOKENS
  * @param input
  */
 void parseLexer(const char *input) {
+    code = input;
     // Array of all character without change the main
     const char *pos = input;
 
     while (*pos) {
         if (*pos == '\n') {
             currentLine++;
-            currentColumn = 1;
+            currentColumn = 0;
             pos++;
             continue;
         }

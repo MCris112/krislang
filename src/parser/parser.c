@@ -14,10 +14,36 @@
 int syntax_error_count = 0;
 
 void syntaxError(const char *message, Token token) {
+    printf("LINE: %d - COLUMN: %d \n", token.line, token.column);
+    const char *code = getCode();
+    const char *lineStart = code;
+    const char *pos = code;
+    int currentLine = 0;
+    // Find start of the error line
+    while (*pos && currentLine < token.line) {
+        if (*pos == '\n') {
+            currentLine++;
+            lineStart = pos + 1;
+        }
+        pos++;
+    }
+    // Find end of the line
+    const char *lineEnd = lineStart;
+    while (*lineEnd && *lineEnd != '\n') { lineEnd++; }
+
+    // Print error header
     fprintf(stderr,
-            "Syntax error at %d:%d - %s\n",
-            token.line, token.column, message
+            "Error: Syntax error at\n --> *.kris %d:%d\n\n",
+            token.line + 1, token.column + 1
     );
+
+    fwrite(lineStart, 1, lineEnd - lineStart, stderr);
+    fprintf(stderr, "\n");
+
+    for (int i = 0; i < token.column; i++) { fputc(' ', stderr); }
+    fprintf(stderr, "^\n");
+
+    fprintf(stderr, "= %s\n", message);
     syntax_error_count++;
     exit(EXIT_FAILURE);
 }
@@ -74,8 +100,11 @@ Token currentToken() {
     return getTokens()[current];
 }
 
-ASTNode *addASTNode(ASTBlock *parent, ASTNode child) {
+Token beforeToken() {
+    return getTokens()[current - 1];
+}
 
+ASTNode *addASTNode(ASTBlock *parent, ASTNode child) {
     // if ( parent->type == AST_LOGICAL_IF ) {
     //
     //     // Grow children array if needed
@@ -114,8 +143,8 @@ ASTNode *addASTNode(ASTBlock *parent, ASTNode child) {
     // Grow children array if needed
     if (parent->count >= parent->capacity) {
         parent->capacity = parent->capacity
-                                     ? parent->capacity * 2
-                                     : 4;
+                               ? parent->capacity * 2
+                               : 4;
 
         parent->children = realloc(
             parent->children,
@@ -213,12 +242,12 @@ bool isVariableDefinition() {
 
 bool evalVariableDefinition(ASTBlock *parent, TokenType type, VarType varType) {
     Token tok = currentToken();
-    printf("==== SET VARIABLE ON: %s \n", lexerTokenToString(tok.type) );
+    printf("==== SET VARIABLE ON: %s \n", lexerTokenToString(tok.type));
     if (tok.type != type) {
         printf("NO VALID! \n");
         return false;
     }
-        printf("IS VALID! +++++ \n");
+    printf("IS VALID! +++++ \n");
 
     nextPos(); // skip TYPE
 
@@ -264,7 +293,7 @@ bool evalVariableDefinition(ASTBlock *parent, TokenType type, VarType varType) {
     // Parse value
     // Token varValue = currentToken(); nextPos();
     ASTNode *valueNode = parseExpression(0);
-    printf("[VAR][VALUE_NODE] DEFINITION: %s \n", astNodeTypeToString(valueNode->type) );
+    printf("[VAR][VALUE_NODE] DEFINITION: %s \n", astNodeTypeToString(valueNode->type));
     // TODO check well the tokens, cuz if u pass like "String" this will throw like a normal function call instead of var definition
 
     printf("[VAR] After value expresed: %s\n", lexerTokenToString(currentToken().type));
@@ -275,9 +304,7 @@ bool evalVariableDefinition(ASTBlock *parent, TokenType type, VarType varType) {
 
     printf("CURRENCT TOKEN: %s \n", lexerTokenToString(currentToken().type));
     if (currentToken().type != TOK_SEMICOLON) {
-        parserPrintASTNode(valueNode, 0);
-
-        syntaxError("Semicolon expected", currentToken());
+        syntaxError("Semicolon expected", beforeToken());
         return false;
     }
 
@@ -293,7 +320,7 @@ bool evalVariableDefinition(ASTBlock *parent, TokenType type, VarType varType) {
         }
     };
 
-    addASTNode( parent, definition);
+    addASTNode(parent, definition);
     return true;
 }
 
@@ -336,26 +363,25 @@ bool evalVariableDefinition(ASTBlock *parent, TokenType type, VarType varType) {
 
 void *parseBody(ASTBlock *parent) {
     printf("----------------NEW BODY-------------\n\n");
-    while (!isEnd() && currentToken().type != TOK_BRACE_CLOSE ) {
-
+    while (!isEnd() && currentToken().type != TOK_BRACE_CLOSE) {
         if (currentToken().type == TOK_LOGICAL_IF) {
-            parseNodeIf( parent );
+            parseNodeIf(parent);
             continue;
         }
 
         // 2. VARIABLE DEFINITIONS
         if (isVariableDefinition()) {
-            if (evalVariableDefinition( parent, TOK_VARIABLE_TYPE_STRING, VARIABLE_TYPE_STRING)) continue;
-            if (evalVariableDefinition( parent, TOK_VARIABLE_TYPE_INT, VARIABLE_TYPE_INT)) continue;
-            if (evalVariableDefinition( parent, TOK_VARIABLE_TYPE_BOOLEAN, VARIABLE_TYPE_BOOLEAN)) continue;
-            if (evalVariableDefinition( parent, TOK_VARIABLE_TYPE_FLOAT, VARIABLE_TYPE_FLOAT)) continue;
-            if (evalVariableDefinition( parent, TOK_VARIABLE_TYPE_CHAR, VARIABLE_TYPE_CHAR)) continue;
+            if (evalVariableDefinition(parent, TOK_VARIABLE_TYPE_STRING, VARIABLE_TYPE_STRING)) continue;
+            if (evalVariableDefinition(parent, TOK_VARIABLE_TYPE_INT, VARIABLE_TYPE_INT)) continue;
+            if (evalVariableDefinition(parent, TOK_VARIABLE_TYPE_BOOLEAN, VARIABLE_TYPE_BOOLEAN)) continue;
+            if (evalVariableDefinition(parent, TOK_VARIABLE_TYPE_FLOAT, VARIABLE_TYPE_FLOAT)) continue;
+            if (evalVariableDefinition(parent, TOK_VARIABLE_TYPE_CHAR, VARIABLE_TYPE_CHAR)) continue;
         }
 
         if (currentToken().type == TOK_FUNCTION_CALL) {
             printf("IS TOK_FUNCTION CALL: TOKEN: %s  \n \n", lexerTokenToString(currentToken().type));
             ASTNode *func = parseFunctionCall();
-            addASTNode( parent, *func);
+            addASTNode(parent, *func);
             continue;
         }
 
@@ -367,15 +393,15 @@ void *parseBody(ASTBlock *parent) {
 }
 
 ASTNode getAST() {
-    ASTNode *parent = malloc( sizeof(ASTNode) );
+    ASTNode *parent = malloc(sizeof(ASTNode));
     parent->type = AST_PROGRAM;
     parent->block.children = NULL;
     parent->block.capacity = 0;
     parent->block.count = 0;
 
-    parseBody( &parent->block );
+    parseBody(&parent->block);
 
-    parserPrintAST( parent );
+    parserPrintAST(parent);
 
     if (syntax_error_count > 0) {
         fprintf(stderr,

@@ -107,6 +107,8 @@ typedef struct {
     };
 } Token;
 
+const char *getCode(void);
+
 void parseLexer(const char *input);
 
 Token *getTokens();

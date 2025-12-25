@@ -119,6 +119,8 @@ bool isEnd();
 
 Token currentToken();
 
+Token beforeToken();
+
 ASTNode getAST();
 
 void astParsePrint(ASTNode *parent);

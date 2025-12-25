@@ -91,9 +91,9 @@ ASTNode *parseFunctionCall() {
 
     while (!isEnd() && currentToken().type != TOK_PARENTHESIS_CLOSE) {
         //nextPos(); // skip coma or first parentesis
-        printf("[parseFunctionCall][WHILE] BEFORE SKIPPING: %s \n", lexerTokenToString(currentToken().type) );
+        printf("[parseFunctionCall][WHILE] BEFORE SKIPPING: %s \n", lexerTokenToString(currentToken().type));
         nextPos(); // skip coma or first parentesis
-        printf("[parseFunctionCall][WHILE] AFTER SKIPPING: %s \n", lexerTokenToString(currentToken().type) );
+        printf("[parseFunctionCall][WHILE] AFTER SKIPPING: %s \n", lexerTokenToString(currentToken().type));
 
         Token token = currentToken();
         ASTNode *arg = parseExpression(0);
@@ -118,10 +118,10 @@ ASTNode *parseFunctionCall() {
         return NULL;
     }
 
-    printf("[parseFunctionCall] BEFORE SKIPPING: %s \n", lexerTokenToString(currentToken().type) );
+    printf("[parseFunctionCall] BEFORE SKIPPING: %s \n", lexerTokenToString(currentToken().type));
 
     nextPos(); // skip ')'
-    printf("[parseFunctionCall] AFTER SKIPPING: %s \n", lexerTokenToString(currentToken().type) );
+    printf("[parseFunctionCall] AFTER SKIPPING: %s \n", lexerTokenToString(currentToken().type));
     printf(" \n \n  === END FUNCTION CALL ===\n\n");
     return func;
 }
@@ -145,12 +145,12 @@ ASTNode *parseExpression(int deep) {
 
     Token token = currentToken();
 
-    switch ( token.type ) {
-        case  TOK_TEXT:
+    switch (token.type) {
+        case TOK_TEXT:
             node->type = AST_TEXT;
             node->text = strdup(currentToken().text);
             break;
-        case  TOK_CHAR:
+        case TOK_CHAR:
             node->type = AST_CHAR;
             node->text = strdup(currentToken().text);
             break;
@@ -174,25 +174,27 @@ ASTNode *parseExpression(int deep) {
             node = parseFunctionCall();
             break;
         default:
-            node->type = AST_ERROR;
-            break;
+            syntaxError("Expected expression", token);
+            ASTNode *err = malloc(sizeof(ASTNode));
+            err->type = AST_ERROR;
+            return err;
     }
 
     // Avoid debug, cuz in parseFunctionCall() already skip one that is the parentesis, so
     // The program can skip again or will skip the TOK_SEMICOLON
-    if ( token.type != TOK_FUNCTION_CALL )
+    if (token.type != TOK_FUNCTION_CALL && node->type != AST_ERROR)
         nextPos();
 
     printf("[EXPRESSION] SKIPPING(1): %s\n", lexerTokenToString(currentToken().type));
 
     // Case have error, return the error, dont do more
-    if ( node->type == AST_ERROR ) {
+    if (node->type == AST_ERROR) {
         syntaxError("The code is not recognized", token);
         return node;
     }
 
-    if ( currentToken().type == TOK_SEMICOLON ) {
-        printf("[EXPRESSION SKYKING ON : %s ]\n", lexerTokenToString(currentToken().type) );
+    if (currentToken().type == TOK_SEMICOLON) {
+        printf("[EXPRESSION SKYKING ON : %s ]\n", lexerTokenToString(currentToken().type));
         return node;
     }
 
@@ -212,8 +214,8 @@ ASTNode *parseExpression(int deep) {
         node = concat;
     }
 
-    if ( currentToken().type == TOK_EQUAL_EQUAL ) {
-        printf( "Consuming TOK_EQUAL_EQUAL: Line: %d, Column: %d  \n", currentToken().line, currentToken().column );
+    if (currentToken().type == TOK_EQUAL_EQUAL) {
+        printf("Consuming TOK_EQUAL_EQUAL: Line: %d, Column: %d  \n", currentToken().line, currentToken().column);
         nextPos(); // consume '=='
 
         ASTNode *right = parseExpression(deep);
@@ -229,4 +231,3 @@ ASTNode *parseExpression(int deep) {
     printf("[EXPRESSION] RETURNING: %s\n", lexerTokenToString(currentToken().type));
     return node;
 }
-

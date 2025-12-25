@@ -1,9 +1,159 @@
-INT $input = input("Dime un numero?", INT);
+// ===============================
+// BASIC TYPES & ASSIGNMENT
+// ===============================
 
-IF ( $input ){
-    print( $input + "? awadkjdsf" );
-} ELSE {
-    print("IN ELSE");
+INT $a = 5;
+INT $b = 0;
+FLOAT $f1 = 5.5;
+FLOAT $f2 = -3.2;
+STRING $s1 = "hello";
+STRING $s2 = "";
+CHAR $c1 = 'A';
+CHAR $c2 = '\0';
+BOOL $t = true;
+BOOL $f = false;
+
+// ===============================
+// BOOLEAN EVALUATION (IF)
+// ===============================
+
+IF ($a) {
+    print("INT non-zero is true");
 }
 
-print("OK");
+IF ($b) {
+    print("BUG: zero int should be false");
+}
+
+IF ($f1) {
+    print("FLOAT positive is true");
+}
+
+IF ($f2) {
+    print("BUG: negative float should be false (by your rules)");
+}
+
+IF ($s1) {
+    print("STRING non-empty is true");
+}
+
+IF ($s2) {
+    print("BUG: empty string should be false");
+}
+
+IF ($c1) {
+    print("CHAR non-null is true");
+}
+
+IF ($c2) {
+    print("BUG: null char should be false");
+}
+
+IF ($t) {
+    print("BOOL true works");
+}
+
+IF ($f) {
+    print("BUG: false bool should not enter");
+}
+
+// ===============================
+// COMPARISONS (==)
+// ===============================
+
+IF (5 == 5) {
+    print("INT == INT works");
+}
+
+IF (5 == 5.0) {
+    print("INT == FLOAT works");
+}
+
+IF (5.0 == 5) {
+    print("FLOAT == INT works");
+}
+
+IF (5 == 5.5) {
+    print("BUG: 5 == 5.5 should be false");
+}
+
+IF ("hello" == "hello") {
+    print("STRING == STRING works");
+}
+
+IF ("hello" == "world") {
+    print("BUG: string mismatch should be false");
+}
+
+IF ('A' == 'A') {
+    print("CHAR == CHAR works");
+}
+
+IF ('A' == 'B') {
+    print("BUG: char mismatch should be false");
+}
+
+IF (TRUE == TRUE) {
+    print("BOOL == BOOL works");
+}
+
+IF (TRUE == FALSE) {
+    print("BUG: bool mismatch should be false");
+}
+
+// ===============================
+// CONCATENATION (+)
+// ===============================
+
+STRING $cs1 = "hello" + " world";
+print($cs1);
+
+STRING $cs2 = "age: " + 25;
+print($cs2);
+
+STRING $cs3 = 25 + " years";
+print($cs3);
+
+STRING $cs4 = "pi: " + 3.14;
+print($cs4);
+
+STRING $cs5 = TRUE + "!";
+print($cs5);
+
+STRING $cs6 = 'A' + "pple";
+print($cs6);
+
+INT $sum1 = 5 + 5;
+print($sum1);
+
+FLOAT $sum2 = 5 + 5.5;
+print($sum2);
+
+// ===============================
+// INPUT (TYPE CONVERSION)
+// ===============================
+
+INT $age = input("Enter age (INT): ", INT);
+print("Age is: " + $age);
+
+FLOAT $price = input("Enter price (FLOAT): ", FLOAT);
+print("Price is: " + $price);
+
+STRING $name = input("Enter name (STRING): ", STRING);
+print("Name is: " + $name);
+
+CHAR $letter = input("Enter one character: ", CHAR);
+print("Letter is: " + $letter);
+
+BOOLEAN $ok = input("Enter true/false or 1/0: ", BOOLEAN);
+print("BOOLEAN is: " + $ok);
+
+// ===============================
+// TYPE MISMATCH (EXPECTED ERRORS)
+// ===============================
+
+// INT $bad1 = "hello";          // should error
+// STRING $bad2 = 5 + true;      // should error or stringify
+// IF (VOID) { }                 // should error
+// IF (input("x", VOID)) { }     // should error
+

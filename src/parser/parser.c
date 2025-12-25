@@ -68,6 +68,8 @@ char *astNodeTypeToString(ASTNodeType type) {
         case AST_VARIABLE_DEFINITION:
             return "AST_VARIABLE_DEFINITION";
 
+        case AST_TYPE_LITERAL:
+            return "AST_TYPE_LITERAL";
         case AST_VARIABLE_CAST:
             return "AST_VARIABLE_CAST";
 
@@ -251,6 +253,7 @@ ASTNodeType fromTokVariableTypeToASTNodeType(TokenType type) {
     }
 }
 
+
 ASTNode parseTypeLiteral() {
     Token type = currentToken();
 
@@ -272,6 +275,8 @@ ASTNode parseTypeLiteral() {
         nextPos(); // skip ')'
     }
 
+    nextPos();
+
     if ( currentToken().type != TOK_VARIABLE ) {
 
         ASTNodeType literal = fromTokVariableTypeToASTNodeType(type.type);
@@ -282,10 +287,12 @@ ASTNode parseTypeLiteral() {
 
         return (ASTNode){
             .type = AST_TYPE_LITERAL,
-            .literal = literal
+            .literal = {
+                .type = literal,
+                .size = size
+            }
         };
     }
-    nextPos();
 
     /*
     *if (isVariableDefinition()) {

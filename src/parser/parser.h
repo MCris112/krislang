@@ -22,11 +22,13 @@ typedef enum {
     AST_BOOLEAN,
     AST_CHAR,
     AST_VOID,
+    AST_NULL,
     AST_UNKNOWN,
     AST_ERROR,
 
     AST_CONCAT, // CONCAT CERTAIN VALUES
     AST_COMPARE,
+    AST_UNARY,
 
     AST_VARIABLE_DEFINITION, // Define a new var $varname = "something"
     AST_VARIABLE_CAST, // call a var like: echo $varname;
@@ -52,6 +54,11 @@ typedef struct {
     int capacity;
 } ASTBlock;
 
+typedef struct {
+    TokenType operator;   // TOKEN_MINUS, TOKEN_PLUS, etc.
+    struct ASTNode *operand;
+} ASTUnary;
+
 
 typedef struct ASTNode {
     ASTNodeType type;
@@ -64,7 +71,11 @@ typedef struct ASTNode {
         int number;
         double decimal;
         bool boolean;
-        ASTNodeType literal; // TODO here i have to store the size too
+
+        struct {
+            ASTNodeType type;
+            int size; //-1 means auto memory size
+        } literal;
 
         /* -------------------------
          * Binary operations
@@ -73,6 +84,12 @@ typedef struct ASTNode {
             struct ASTNode *left;
             struct ASTNode *right;
         } binary;
+
+        /* -------------------------
+        * Unary declaration
+        * when detect an operator before, like - / +
+        * ------------------------- */
+        ASTUnary unary;
 
         /* -------------------------
          * Variable declaration

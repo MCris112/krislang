@@ -126,30 +126,48 @@ ASTNode *parseFunctionCall() {
     return func;
 }
 
+
 ASTNode *parseExpression(int deep) {
-    printf("[EXPRESSION] EXECUTING....: %s \n", lexerTokenToString(currentToken().type));
     if (isEnd()) {
         ASTNode *err = malloc(sizeof(ASTNode));
         err->type = AST_ERROR;
         return err;
     }
 
-    ASTNode *node = malloc(sizeof(ASTNode));
-
-    // if (currentToken().type == TOK_SEMICOLON) {
-    //     // TODO decide if stop parsing by aborting or show errors
-    //     ASTNode *empty = malloc(sizeof(ASTNode));
-    //     empty->type = AST_ERROR;
-    //     return empty;
-    // }
-
     Token token = currentToken();
+
+    // ============================
+    // UNARY (PREFIX) — HIGHEST PRECEDENCE
+    // ============================
+
+    if (token.type == TOK_MINUS) {
+        ASTNode *unary = malloc(sizeof(ASTNode));
+        unary->type = AST_UNARY;
+        unary->unary.operator = TOK_MINUS;
+        nextPos(); // consume '-'
+        unary->unary.operand = parseExpression(deep + 1);
+        return unary; // IMPORTANT: stop here
+    }
+
+    // ============================
+    // PRIMARY EXPRESSIONS
+    // ============================
+
+    ASTNode *node = malloc(sizeof(ASTNode));
+    // Some cases the function already do nextPos() so i better decide what need to avoid skipping
+    bool needToSkip = true;
 
     switch (token.type) {
         case TOK_VARIABLE_TYPE_INT:
+        case TOK_VARIABLE_TYPE_STRING:
+        case TOK_VARIABLE_TYPE_BOOLEAN:
+        case TOK_VARIABLE_TYPE_FLOAT:
+        case TOK_VARIABLE_TYPE_CHAR:
+        case TOK_VARIABLE_TYPE_VOID:
             ASTNode literal = parseTypeLiteral();
             node->type = literal.type;
             node->literal = literal.literal;
+            needToSkip = false;
             break;
         case TOK_TEXT:
             node->type = AST_TEXT;
@@ -177,6 +195,10 @@ ASTNode *parseExpression(int deep) {
             break;
         case TOK_FUNCTION_CALL:
             node = parseFunctionCall();
+
+            // Avoid debug, cuz in parseFunctionCall() already skip one that is the parentesis, so
+            // The program can skip again or will skip the TOK_SEMICOLON
+            needToSkip = false;
             break;
         default:
             syntaxError("Expected expression", token);
@@ -185,28 +207,20 @@ ASTNode *parseExpression(int deep) {
             return err;
     }
 
-    // Avoid debug, cuz in parseFunctionCall() already skip one that is the parentesis, so
-    // The program can skip again or will skip the TOK_SEMICOLON
-    if (token.type != TOK_FUNCTION_CALL && node->type != AST_ERROR)
+    if (needToSkip)
         nextPos();
 
-    printf("[EXPRESSION] SKIPPING(1): %s\n", lexerTokenToString(currentToken().type));
-
-    // Case have error, return the error, dont do more
-    if (node->type == AST_ERROR) {
-        syntaxError("The code is not recognized", token);
-        return node;
-    }
+    // ============================
+    // BINARY OPERATORS (LEFT‑ASSOCIATIVE)
+    // ===========================
 
     if (currentToken().type == TOK_SEMICOLON) {
         printf("[EXPRESSION SKYKING ON : %s ]\n", lexerTokenToString(currentToken().type));
         return node;
     }
 
-    // check next is sum for concat
+    // CONCAT (+)
     if (currentToken().type == TOK_PLUS) {
-        printf("[EXPRESSION] CONCATING...: %s\n", lexerTokenToString(currentToken().type));
-
         nextPos(); // consume '+'
 
         ASTNode *right = parseExpression(deep);
@@ -219,8 +233,8 @@ ASTNode *parseExpression(int deep) {
         node = concat;
     }
 
+    // COMPARE (==)
     if (currentToken().type == TOK_EQUAL_EQUAL) {
-        printf("Consuming TOK_EQUAL_EQUAL: Line: %d, Column: %d  \n", currentToken().line, currentToken().column);
         nextPos(); // consume '=='
 
         ASTNode *right = parseExpression(deep);
@@ -233,6 +247,5 @@ ASTNode *parseExpression(int deep) {
         node = compare;
     }
 
-    printf("[EXPRESSION] RETURNING: %s\n", lexerTokenToString(currentToken().type));
     return node;
 }

@@ -19,6 +19,7 @@ typedef enum {
     ENV_FLOAT,
     ENV_BOOL,
     ENV_CHAR,
+    ENV_VOID,
     ENV_NULL
 } EnvValueType;
 
@@ -58,6 +59,10 @@ EnvValue *envValueBoolean(bool v);
 EnvValue *envValueCharacter(char v);
 
 EnvValue *envValueNull(void);
+
+EnvValue *envValueVoid(void);
+
+char* envValueToString(EnvValue *v);
 
 void initSymbolTable(SymbolTable **variableTable);
 

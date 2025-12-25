@@ -13,6 +13,8 @@
 //------------------------------------
 const char *lexerTokenToString(TokenType type) {
     switch (type) {
+        case TOK_ERROR: return "TOK_ERROR";
+
         // VARIABLES
         case TOK_VARIABLE_TYPE_INT: return "TOK_VARIABLE_TYPE_INT";
         case TOK_VARIABLE_TYPE_STRING: return "TOK_VARIABLE_TYPE_STRING";
@@ -74,8 +76,10 @@ const char *lexerTokenToString(TokenType type) {
 
         // LITERALS
         case TOK_TEXT: return "TOK_TEXT";
+        case TOK_CHAR: return "TOK_CHAR";
         case TOK_NUMBER: return "TOK_NUMBER";
         case TOK_NUMBER_DECIMAL: return "TOK_NUMBER_DECIMAL";
+        case TOK_LITERAL_BOOLEAN: return "TOK_LITERAL_BOOLEAN";
 
         case TOK_WHITESPACE: return "TOK_WHITESPACE";
         case TOK_COMMENT_NORMAL: return "TOK_COMMENT_NORMAL";
@@ -128,6 +132,8 @@ void parserPrintASTNode(ASTNode *node, int indent) {
             printf(" [Body=%d Else=%d]", node->logicalIf.bodyBlock.count, node->logicalIf.elseBlock.count);
             break;
 
+        case AST_TYPE_LITERAL:
+            printf(" (%s | size: %d)", astNodeTypeToString(node->literal.type), node->literal.size);
             break;
         case AST_FUNCTION_CALL: printf(" (%s)", node->funcCall.name);
             break;
@@ -194,15 +200,37 @@ void parserPrintAST(ASTNode *root) {
 char *parserVarTypeToString(VarType type) {
     switch (type) {
         case VARIABLE_TYPE_STRING:
-            return "string";
+            return "STRING";
         case VARIABLE_TYPE_INT:
-            return "int";
+            return "INT";
         case VARIABLE_TYPE_FLOAT:
-            return "float";
+            return "FLOAT";
         case VARIABLE_TYPE_BOOLEAN:
-            return "boolean";
+            return "BOOLEAN";
         case VARIABLE_TYPE_CHAR:
-            return "char";
+            return "CHAR";
+        case VARIABLE_TYPE_NEVER:
+            return "CHAR";
+        default: return "UNKNOWN";
+    }
+}
+
+char *parseEnvValueTypeToString(EnvValueType type) {
+    switch (type) {
+        case ENV_STRING:
+            return "STRING";
+        case ENV_INT:
+            return "INT";
+        case ENV_FLOAT:
+            return "FLOAT";
+        case ENV_BOOL:
+            return "BOOLEAN";
+        case ENV_CHAR:
+            return "CHAR";
+        case ENV_VOID:
+            return "VOID";
+        case ENV_NULL:
+            return "NULL";
         default: return "UNKNOWN";
     }
 }
@@ -224,7 +252,7 @@ void printSymbolTable(SymbolTable *variableTable) {
     for (int i = 0; i < variableTable->count; i++) {
         Environment *sym = &variableTable->symbols[i];
 
-        printf("name: %s   type: ", sym->name);
+        printf("name: %-10s type: ", sym->name);
 
         // Print declared type
         switch (sym->type) {
@@ -253,13 +281,33 @@ void printSymbolTable(SymbolTable *variableTable) {
         // Print runtime value
         switch (sym->value.type) {
             case ENV_STRING:
-                printf("\"%s\"", sym->value.text);
+                if (sym->value.text) printf("\"%s\"", sym->value.text);
+                else printf("NULL_STRING");
+                break;
                 break;
             case ENV_INT:
                 printf("%d", sym->value.number);
                 break;
+            case ENV_FLOAT:
+                printf("%f", sym->value.decimal);
+                break;
+            case ENV_BOOL:
+                printf(sym->value.boolean ? "TRUE" : "FALSE");
+                break;
+            case ENV_CHAR:
+                if (sym->value.character == '\0') printf("'\\0'");
+                else if (sym->value.character == '\n') printf("'\\n'");
+                else if (sym->value.character == '\t') printf("'\\t'");
+                else printf("'%c'", sym->value.character);
+                break;
+            case ENV_VOID:
+                printf("VOID");
+                break;
+            case ENV_NULL:
+                printf("NULL");
+                break;
             default:
-                printf("<invalid>");
+                printf("<UNKNOW>");
                 break;
         }
 

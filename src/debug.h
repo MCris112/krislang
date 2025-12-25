@@ -30,6 +30,8 @@ void parserPrintAST(ASTNode *root);
 
 char *parserVarTypeToString(VarType type);
 
+char *parseEnvValueTypeToString( EnvValueType type );
+
 
 //------------------------------------
 //

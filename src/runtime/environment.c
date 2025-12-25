@@ -10,6 +10,7 @@
 #include <string.h>
 
 #include "runtime.h"
+#include "../debug.h"
 
 EnvValue *envValueInt(int v) {
     EnvValue *val = malloc(sizeof(EnvValue));
@@ -52,12 +53,56 @@ EnvValue *envValueNull() {
     return val;
 }
 
+EnvValue *envValueVoid() {
+    EnvValue *val = malloc(sizeof(EnvValue));
+    val->type = ENV_VOID;
+    return val;
+}
+
 void initSymbolTable(SymbolTable **variableTable) {
     *variableTable = malloc(sizeof(SymbolTable));
     (*variableTable)->symbols = NULL;
     (*variableTable)->count = 0;
     (*variableTable)->capacity = 0;
 }
+
+char* envValueToString(EnvValue *v) {
+    char buffer[64];
+
+    switch (v->type) {
+        case ENV_STRING:
+            return strdup(v->text ? v->text : "");
+
+        case ENV_INT:
+            snprintf(buffer, sizeof(buffer), "%d", v->number);
+            return strdup(buffer);
+
+        case ENV_FLOAT:
+            snprintf(buffer, sizeof(buffer), "%.6f", v->decimal);
+            return strdup(buffer);
+
+        case ENV_BOOL:
+            return strdup(v->boolean ? "TRUE" : "FALSE");
+
+        case ENV_CHAR: {
+            char *buf = malloc(2);
+            buf[0] = v->character;
+            buf[1] = '\0';
+            return buf;
+        }
+
+        case ENV_NULL:
+            return strdup("");
+
+        case ENV_VOID:
+            syntaxError("Cannot convert VOID to string", currentToken());
+            return strdup("");
+
+        default:
+            return strdup("<invalid>");
+    }
+}
+
 
 void envDeclare(SymbolTable *variableTable, ASTNode *node) {
     VarType type = node->varDecl.varType;
@@ -99,7 +144,13 @@ void envDeclare(SymbolTable *variableTable, ASTNode *node) {
     }
 
     if (abort) {
-        fprintf(stderr, "Type mismatch for variable %s\n", node->varDecl.name);
+        fprintf(
+            stderr,
+            "error: type mismatch in variable assignment\n  %s > expected %s\n  received %s",
+            node->varDecl.name,
+            parserVarTypeToString(type),
+            parseEnvValueTypeToString( valueNode->type )
+            );
         exit(EXIT_FAILURE);
     }
 

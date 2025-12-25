@@ -10,6 +10,7 @@
 
 #include "environment.h"
 #include "../debug.h"
+#include "../helpers/helper.h"
 
 
 //-----------------------------------
@@ -38,13 +39,20 @@ void printLiteral(EnvValue *value) {
             break;
 
         default:
-            printf("<INVALID>");
+            printf("<%s>", parseEnvValueTypeToString(value->type));
             break;
     }
 
     printf("\n");
 }
 
+/**
+ *
+ *
+ * @param table
+ * @param node
+ * @return
+ */
 EnvValue *runFunctionCall(SymbolTable *table, ASTNode *node) {
     if (strcmp(node->funcCall.name, "print") == 0) {
         EnvValue *result = runExpression(table, node->funcCall.arguments[0]);
@@ -68,14 +76,63 @@ EnvValue *runFunctionCall(SymbolTable *table, ASTNode *node) {
         fgets(buffer, sizeof(buffer), stdin);
         buffer[strcspn(buffer, "\n")] = '\0'; // remove newline
 
-        if ( node->funcCall.count > 1 ) {
-            EnvValue *argType = runExpression( table, node->funcCall.arguments[1]);
+        if (node->funcCall.count > 1) {
+            EnvValue *argType = runExpression(table, node->funcCall.arguments[1]);
 
-            switch ( argType->type ) {
-                case ENV_STRING:
+            // TODO fix the error on console, this is not syntaxis error is input error or something like it
+            switch (argType->type) {
+                case ENV_STRING: return envValueString(buffer);
+                case ENV_INT: {
+                    char *end;
+                    errno = 0;
+                    long v = strtol(buffer, &end, 10);
+                    if (end == buffer) { syntaxError("Expected integer input", currentToken()); }
+                    if (errno == ERANGE) { syntaxError("Integer value out of range", currentToken()); }
+                    if (*end != '\0') { syntaxError("Invalid characters after number", currentToken()); }
+                    return envValueInt((int) v);
+                }
+                case ENV_FLOAT: {
+                    char *end;
+                    errno = 0;
+                    double value = strtod(buffer, &end);
+                    if (end == buffer) { syntaxError("Expected a floating-point number", currentToken()); }
+                    if (errno == ERANGE) { syntaxError("Floating-point value out of range", currentToken()); }
+                    if (*end != '\0') { syntaxError("Invalid characters after number", currentToken()); }
+                    return envValueFloat(value);
+                }
+                case ENV_BOOL:
+                    if (strcmp(buffer, "1") == 0)
+                        return envValueBoolean(true);
+
+                    if (strcmp(buffer, "0") == 0)
+                        return envValueBoolean(false);
+
+                    if (strcmp(buffer, "true") == 0)
+                        return envValueBoolean(true);
+
+                    if (strcmp(buffer, "false") == 0)
+                        return envValueBoolean(false);
+
+                    // fallback: any non-empty, non-space string is true
+                    if (buffer[0] != '\0' && buffer[0] != ' ')
+                        return envValueBoolean(true);
+
+                    return envValueBoolean(false);
+                case ENV_CHAR:
+                    // Empty input is not allower
+                    if (buffer[0] == '\0') syntaxError("Expected a character, got empty input", currentToken());
+
+                    // more than one character is not allowed
+                    if (buffer[1] != '\0')
+                        syntaxError("Expected a character", currentToken());
+                    return envValueCharacter(buffer[0]);
+                case ENV_NULL:
+                    syntaxError("Expected a non-null argument", currentToken());
                     break;
-                case ENV_INT:
-                    return envValueInt( buffer );
+                case ENV_VOID:
+                    syntaxError("Expected a non-void argument", currentToken());
+                    break;
+                default: return envValueString(buffer);
             }
         }
         return envValueString(buffer);
@@ -90,84 +147,171 @@ EnvValue *runExpression(SymbolTable *symbolTable, ASTNode *node) {
     if (!node) return envValueNull();
 
     switch (node->type) {
+        // ============================
+        // LITERALS
+        // ============================
         case AST_TEXT: return envValueString(node->text);
         case AST_CHAR: return envValueCharacter(node->text[0]);
         case AST_NUMBER: return envValueInt(node->number);
         case AST_NUMBER_DECIMAL: return envValueFloat(node->decimal);
         case AST_BOOLEAN: return envValueBoolean(node->boolean);
 
+        // ============================
+        // VARIABLES
+        // ============================
         case AST_VARIABLE_CAST:
             return envGetValue(symbolTable, node->text);
+
+        // ============================
+        // UNARY
+        // ============================
+        case AST_UNARY: {
+            EnvValue *value = runExpression(symbolTable, node->unary.operand);
+            if (node->unary.operator == TOK_MINUS) {
+                switch (value->type) {
+                    case ENV_INT: return envValueInt(-value->number);
+                    case ENV_FLOAT: return envValueFloat(-value->decimal);
+                        // TODO SUPPORT ( ... )
+                    default: syntaxError("Unary '-' can only be applied to numbers", currentToken());
+                        return envValueNull();
+                }
+            }
+            syntaxError("Unsupported unary operator", currentToken());
+            return envValueNull();
+        }
+
+        // ============================
+        // CONCAT (+)
+        // ============================
         case AST_CONCAT: {
             EnvValue *left = runExpression(symbolTable, node->binary.left);
             EnvValue *right = runExpression(symbolTable, node->binary.right);
 
-            if (left->type == ENV_INT && right->type == ENV_INT) {
-                return envValueInt(left->number + right->number);
+            // Numeric addition
+            if ((left->type == ENV_INT || left->type == ENV_FLOAT) && (
+                    right->type == ENV_INT || right->type == ENV_FLOAT)) {
+                double a = (left->type == ENV_INT) ? left->number : left->decimal;
+                double b = (right->type == ENV_INT) ? right->number : right->decimal;
+                // If both are INT, return INT
+                if (left->type == ENV_INT && right->type == ENV_INT)
+                    return envValueInt((int) (a + b));
+                // Otherwise return FLOAT
+                return envValueFloat(a + b);
             }
 
-            if (left->type == ENV_STRING && right->type == ENV_INT) {
-                char buffer[64];
-                snprintf(buffer, sizeof(buffer), "%s%d", left->text, right->number);
-                return envValueString(buffer);
-            }
+            // String concatenation (convert both sides to string)
+            char *A = envValueToString(left);
+            char *B = envValueToString(right);
+            size_t lenA = strlen(A);
+            size_t lenB = strlen(B);
+            char *buf = malloc(lenA + lenB + 1);
+            memcpy(buf, A, lenA);
+            memcpy(buf + lenA, B, lenB + 1);
+            free(A);
+            free(B);
 
-            if (left->type == ENV_STRING && right->type == ENV_STRING) {
-                // Getting size of each one
-                size_t lenA = strlen(left->text);
-                size_t lenB = strlen(right->text);
-
-                // Creating a buffer to combine
-                char *buf = malloc(lenA + lenB + 1);
-                memcpy(buf, left->text, lenA);
-                memcpy(buf + lenA, right->text, lenB + 1);
-
-                return envValueString(buf);
-            }
-
-            if (left->type == ENV_STRING && right->type == ENV_CHAR) {
-                // Getting size of each one
-                size_t lenA = strlen(left->text);
-                size_t lenB = strlen(right->text);
-
-                // Creating a buffer to combine
-                char *buf = malloc(lenA + lenB + 1);
-                memcpy(buf, left->text, lenA);
-                memcpy(buf + lenA, right->text, lenB + 1);
-
-                return envValueString(buf);
-            }
-
-
-            if (left->type == ENV_INT && right->type == ENV_STRING) {
-                char buffer[64];
-                snprintf(buffer, sizeof(buffer), "%d%s", left->number, right->text);
-                return envValueString(buffer);
-            }
-            // TODO: handle string concat, variable concat, etc.
-
-            // Unsupported combination
-            return envValueNull();
+            return envValueString(buf);
         }
-
         case AST_FUNCTION_CALL:
             return runFunctionCall(symbolTable, node);
+
+        // ============================
+        // COMPARE (==)
+        // ============================
         case AST_COMPARE:
             EnvValue *left = runExpression(symbolTable, node->binary.left);
             EnvValue *right = runExpression(symbolTable, node->binary.right);
 
             bool boolean = false;
             switch (left->type) {
+                // -----------------------------
+                // STRING == STRING
+                // -----------------------------
                 case ENV_STRING:
                     if (right->type == ENV_STRING) {
                         boolean = strcmp(left->text, right->text) == 0;
                     }
+                    syntaxError(strFormat("Cant compare STRING with %s", parseEnvValueTypeToString(right->type)),
+                                currentToken());
+                    break;
+
+                // -----------------------------
+                // INT == INT or INT == FLOAT
+                // -----------------------------
+                case ENV_INT: if (right->type == ENV_INT) {
+                        boolean = left->number == right->number;
+                        break;
+                    }
+                    if (right->type == ENV_FLOAT) {
+                        boolean = (double) left->number == right->decimal;
+                        break;
+                    }
+                    syntaxError(strFormat("Cant compare INT with %s", parseEnvValueTypeToString(right->type)),
+                                currentToken());
+                    break;
+
+                // -----------------------------
+                // FLOAT == FLOAT or FLOAT == INT
+                // -----------------------------
+                case ENV_FLOAT:
+                    if (right->type == ENV_FLOAT) {
+                        boolean = left->decimal == right->decimal;
+                        break;
+                    }
+                    if (right->type == ENV_INT) {
+                        boolean = left->decimal == (double) right->number;
+                        break;
+                    }
+                    syntaxError(strFormat("Cant compare FLOAT with %s", parseEnvValueTypeToString(right->type)),
+                                currentToken());
+                    break;
+                // -----------------------------
+                //  BOOL == BOOL
+                // -----------------------------
+                case ENV_BOOL: if (right->type == ENV_BOOL) {
+                        boolean = left->boolean == right->boolean;
+                        break;
+                    }
+                    syntaxError(strFormat("Cant compare BOOLEAN with %s", parseEnvValueTypeToString(right->type)),
+                                currentToken());
+                    break;
+
+                // -----------------------------
+                // CHAR == CHAR
+                // -----------------------------
+                case ENV_CHAR: if (right->type == ENV_CHAR) {
+                        boolean = left->character == right->character;
+                        break;
+                    }
+                    syntaxError(strFormat("Cant compare CHAR with %s", parseEnvValueTypeToString(right->type)),
+                                currentToken());
+                    break;
+
+                // -----------------------------
+                // NULL comparisons (optional)
+                // -----------------------------
+                case ENV_NULL:
+                    boolean = (right->type == ENV_NULL);
                     break;
                 default:
+                    syntaxError("Unsupported comparison type", currentToken());
                     break;
             }
 
             return envValueBoolean(boolean);
+        case AST_TYPE_LITERAL:
+            switch (node->literal.type) {
+                // TODO more literals
+                case AST_NUMBER: return envValueInt(0);
+                case AST_NUMBER_DECIMAL: return envValueFloat(0);
+                case AST_BOOLEAN: return envValueBoolean(false);
+                case AST_CHAR: return envValueCharacter(0);
+                case AST_NULL: return envValueNull();
+                case AST_VOID: return envValueVoid();
+                case AST_UNKNOWN: syntaxError("Unknown Expression", currentToken());
+                default: return envValueString("");
+            }
+            break;
         default:
             //TODO RETURN ERRO
             return envValueNull();
@@ -178,10 +322,13 @@ bool runExpressionBoolean(SymbolTable *symbolTable, ASTNode *node) {
     EnvValue *value = runExpression(symbolTable, node);
 
     switch (value->type) {
-        case ENV_BOOL: return value->boolean;
+        case ENV_STRING: return value->text != NULL && value->text[0] != '\0';
         case ENV_INT: return value->number != 0;
-        case ENV_STRING: return value->text && value->text[0] != '\0';
-        default: return false;
+        case ENV_FLOAT: return value->decimal > 0; // Only floats are true if are over 0, anything negative is false
+        case ENV_BOOL: return value->boolean;
+        case ENV_CHAR: return value->character != '\0';
+        case ENV_VOID: syntaxError("Is not possible to compare with a VOID", currentToken());
+        default: return false; // ENV_NULL is also false
     }
 }
 
@@ -200,7 +347,7 @@ void runBody(SymbolTable *varTable, ASTBlock *block) {
             case AST_LOGICAL_IF:
                 if (runExpressionBoolean(varTable, child->logicalIf.conditional)) {
                     runBody(varTable, &child->logicalIf.bodyBlock);
-                } else if ( child->logicalIf.elseBlock.count > 0 ) { runBody(varTable, &child->logicalIf.elseBlock); }
+                } else if (child->logicalIf.elseBlock.count > 0) { runBody(varTable, &child->logicalIf.elseBlock); }
                 break;
             default:
                 fprintf(stderr, "Unknown AST node type (%s)\n", astNodeTypeToString(child->type));

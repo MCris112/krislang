@@ -13,6 +13,7 @@ typedef enum {
     AST_PRINT_STMT,
 
     AST_FUNCTION_CALL,
+    AST_FUNCTION_DEFINITION,
     AST_LOGICAL_IF,
 
     AST_TYPE_LITERAL,
@@ -59,6 +60,11 @@ typedef struct {
     struct ASTNode *operand;
 } ASTUnary;
 
+typedef struct {
+    struct ASTNode **children;
+    int count;
+    int capacity;
+} ASTFunctionArguments;
 
 typedef struct ASTNode {
     ASTNodeType type;
@@ -68,6 +74,7 @@ typedef struct ASTNode {
          * Literals
          * ------------------------- */
         char *text;
+        char character;
         int number;
         double decimal;
         bool boolean;
@@ -111,10 +118,17 @@ typedef struct ASTNode {
          * ------------------------- */
         struct {
             char *name;
-            struct ASTNode **arguments;
-            int count;
-            int capacity;
+            ASTFunctionArguments arguments;
         } funcCall;
+
+        /* -------------------------
+        * Function Definition
+        * ------------------------- */
+        struct {
+            char *name;
+            ASTFunctionArguments arguments;
+            ASTBlock body;
+        } funcDefinition;
 
         /* -------------------------
          * If / Else
@@ -162,6 +176,8 @@ void *parseBody(ASTBlock *parent);
 ASTNode parseTypeLiteral();
 
 ASTNode *parseExpression(int deep );
+
+void parseFunctionArguments( ASTFunctionArguments arguments  );
 
 ASTNode *parseFunctionCall();
 

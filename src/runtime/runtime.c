@@ -55,15 +55,15 @@ void printLiteral(EnvValue *value) {
  */
 EnvValue *runFunctionCall(SymbolTable *table, ASTNode *node) {
     if (strcmp(node->funcCall.name, "print") == 0) {
-        EnvValue *result = runExpression(table, node->funcCall.arguments[0]);
+        EnvValue *result = runExpression(table, node->funcCall.arguments.children[0]);
 
         printLiteral(result);
         return envValueNull();
     }
 
     if (strcmp(node->funcCall.name, "input") == 0) {
-        // First args to show if has show on console
-        EnvValue *result = runExpression(table, node->funcCall.arguments[0]);
+        // First args to show if it has shown on console
+        EnvValue *result = runExpression(table, node->funcCall.arguments.children[0]);
 
         // TODO check correct buffer
         char buffer[256];
@@ -76,8 +76,8 @@ EnvValue *runFunctionCall(SymbolTable *table, ASTNode *node) {
         fgets(buffer, sizeof(buffer), stdin);
         buffer[strcspn(buffer, "\n")] = '\0'; // remove newline
 
-        if (node->funcCall.count > 1) {
-            EnvValue *argType = runExpression(table, node->funcCall.arguments[1]);
+        if (node->funcCall.arguments.count > 1) {
+            EnvValue *argType = runExpression(table, node->funcCall.arguments.children[1]);
 
             // TODO fix the error on console, this is not syntaxis error is input error or something like it
             switch (argType->type) {
@@ -138,8 +138,7 @@ EnvValue *runFunctionCall(SymbolTable *table, ASTNode *node) {
         return envValueString(buffer);
     }
 
-    printf("Unknown function: %s\n", node->funcCall.name);
-
+    syntaxError( strFormat("Unknow Function: %s", node->funcCall.name), currentToken() );
     return envValueNull();
 }
 
@@ -151,7 +150,7 @@ EnvValue *runExpression(SymbolTable *symbolTable, ASTNode *node) {
         // LITERALS
         // ============================
         case AST_TEXT: return envValueString(node->text);
-        case AST_CHAR: return envValueCharacter(node->text[0]);
+        case AST_CHAR: return envValueCharacter(node->character);
         case AST_NUMBER: return envValueInt(node->number);
         case AST_NUMBER_DECIMAL: return envValueFloat(node->decimal);
         case AST_BOOLEAN: return envValueBoolean(node->boolean);
@@ -230,6 +229,7 @@ EnvValue *runExpression(SymbolTable *symbolTable, ASTNode *node) {
                 case ENV_STRING:
                     if (right->type == ENV_STRING) {
                         boolean = strcmp(left->text, right->text) == 0;
+                        break;
                     }
                     syntaxError(strFormat("Cant compare STRING with %s", parseEnvValueTypeToString(right->type)),
                                 currentToken());
@@ -313,7 +313,7 @@ EnvValue *runExpression(SymbolTable *symbolTable, ASTNode *node) {
             }
             break;
         default:
-            //TODO RETURN ERRO
+            //TODO RETURN ERROR
             return envValueNull();
     }
 }

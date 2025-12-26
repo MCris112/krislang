@@ -131,11 +131,12 @@ void parserPrintASTNode(ASTNode *node, int indent) {
         case AST_LOGICAL_IF:
             printf(" [Body=%d Else=%d]", node->logicalIf.bodyBlock.count, node->logicalIf.elseBlock.count);
             break;
-
         case AST_TYPE_LITERAL:
             printf(" (%s | size: %d)", astNodeTypeToString(node->literal.type), node->literal.size);
             break;
         case AST_FUNCTION_CALL: printf(" (%s)", node->funcCall.name);
+            break;
+        case AST_VARIABLE_CAST: printf(" (%s)", node->text);
             break;
         default: break;
     }
@@ -153,8 +154,8 @@ void parserPrintASTNode(ASTNode *node, int indent) {
         case AST_CONCAT: parserPrintASTNode(node->binary.left, indent + 1);
             parserPrintASTNode(node->binary.right, indent + 1);
             break;
-        case AST_FUNCTION_CALL: for (int i = 0; i < node->funcCall.count; i++) {
-                parserPrintASTNode(node->funcCall.arguments[i], indent + 1);
+        case AST_FUNCTION_CALL: for (int i = 0; i < node->funcCall.arguments.count; i++) {
+                parserPrintASTNode(node->funcCall.arguments.children[i], indent + 1);
             }
             break;
         case AST_LOGICAL_IF: {

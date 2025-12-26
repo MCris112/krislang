@@ -11,6 +11,7 @@
 
 #include "runtime.h"
 #include "../debug.h"
+#include "../helpers/helper.h"
 
 EnvValue *envValueInt(int v) {
     EnvValue *val = malloc(sizeof(EnvValue));
@@ -109,7 +110,10 @@ void envDeclare(SymbolTable *variableTable, ASTNode *node) {
 
     EnvValue *valueNode = runExpression( variableTable, node->varDecl.value);
 
-    EnvValue value = {.type = valueNode->type};
+    // Avoid garbage memory
+    EnvValue value = {0};
+    value.type = valueNode->type;
+
     bool abort = false;
 
     switch (type) {
@@ -129,6 +133,7 @@ void envDeclare(SymbolTable *variableTable, ASTNode *node) {
             else value.decimal = valueNode->decimal;
             break;
         case VARIABLE_TYPE_BOOLEAN:
+            printf("\n\n\n======= IN BOOLEAN ======\n\n\n");
             if (valueNode->type != ENV_BOOL)
                 abort = true;
             else value.boolean = valueNode->boolean;
@@ -136,7 +141,7 @@ void envDeclare(SymbolTable *variableTable, ASTNode *node) {
         case VARIABLE_TYPE_CHAR:
             if (valueNode->type != ENV_CHAR)
                 abort = true;
-            else value.text = strdup(valueNode->text);
+            else value.character = valueNode->character;
             break;
         default:
             abort = true;
@@ -174,11 +179,15 @@ void envDeclare(SymbolTable *variableTable, ASTNode *node) {
 
 
 EnvValue *envGetValue(SymbolTable *variableTable, char *name) {
+
     for (int i = 0; i < variableTable->count; i++) {
         Environment *sym = &variableTable->symbols[i];
         if (strcmp(sym->name, name) == 0) {
             return &sym->value;
         }
     }
-    return NULL;
+
+    // TODO SHOW A BETTER ERROR
+    printSymbolTable(variableTable);
+    syntaxError(strFormat("Error Variable '%s' is UNDEFINIED", name), currentToken() );
 }

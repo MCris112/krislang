@@ -56,23 +56,64 @@
 //     return true;
 // }
 
-void parserAddFunctionArgument(ASTNode **funcNode, ASTNode *arg) {
-    // Upper memory size for function if is need it
-    if ((*funcNode)->funcCall.count >= (*funcNode)->funcCall.capacity) {
-        (*funcNode)->funcCall.capacity = (*funcNode)->funcCall.capacity ? (*funcNode)->funcCall.capacity * 2 : 8;
+void parserAddFunctionArgument(ASTFunctionArguments arguments, ASTNode *arg) {
 
-        (*funcNode)->funcCall.arguments = realloc(
-            (*funcNode)->funcCall.arguments,
-            (*funcNode)->funcCall.capacity * sizeof(ASTNode *)
+    // Upper memory size for function if is need it
+    if ( arguments.count >= arguments.capacity) {
+        arguments.capacity = arguments.capacity ? arguments.capacity * 2 : 8;
+
+        arguments.children = realloc(
+            arguments.children,
+            arguments.capacity * sizeof(ASTNode *)
         );
     }
 
-    (*funcNode)->funcCall.arguments[(*funcNode)->funcCall.count] = arg;
-    (*funcNode)->funcCall.count++;
+    arguments.children[arguments.count] = arg;
+    arguments.count++;
+}
+
+/**
+ * Read all token and parse the arguments, also create the ASTNode inside
+ * so this can avoid to forget on let empty model and couses crash
+ * @param arguments
+ */
+void parseFunctionArguments( ASTFunctionArguments arguments  ) {
+    arguments = (ASTFunctionArguments){
+        .children = NULL,
+        .count = 0,
+        .capacity = 8,
+    };
+
+    while (!isEnd() && currentToken().type != TOK_PARENTHESIS_CLOSE) {
+        nextPos(); // skip coma or first parentesis
+
+        Token token = currentToken();
+        ASTNode *arg = parseExpression(0);
+
+        if (arg == NULL) {
+            syntaxError("Unexpected parameter", token);
+            break;
+        }
+
+        parserAddFunctionArgument(arguments, arg);
+
+        if (currentToken().type != TOK_PARENTHESIS_CLOSE) {
+            if (currentToken().type != TOK_COMMA) {
+                syntaxError("Expected to close or more args", currentToken());
+                break;
+            }
+        }
+    }
+
+    if (isEnd()) {
+        syntaxError("Expected to close or more args", currentToken());
+        return;
+    }
+
+    nextPos(); // skip ')'
 }
 
 ASTNode *parseFunctionCall() {
-    printf(" \n \n  ===FUNCTION CALL ===\n");
     Token functionCall = currentToken(); // function name token
     nextPos();
 
@@ -85,44 +126,16 @@ ASTNode *parseFunctionCall() {
     ASTNode *func = malloc(sizeof(ASTNode));
     func->type = AST_FUNCTION_CALL;
     func->funcCall.name = strdup(functionCall.text);
-    func->funcCall.arguments = NULL;
-    func->funcCall.capacity = 0;
-    func->funcCall.count = 0;
 
-    while (!isEnd() && currentToken().type != TOK_PARENTHESIS_CLOSE) {
-        //nextPos(); // skip coma or first parentesis
-        printf("[parseFunctionCall][WHILE] BEFORE SKIPPING: %s \n", lexerTokenToString(currentToken().type));
-        nextPos(); // skip coma or first parentesis
-        printf("[parseFunctionCall][WHILE] AFTER SKIPPING: %s \n", lexerTokenToString(currentToken().type));
+   parseFunctionArguments( func->funcCall.arguments );
 
-        Token token = currentToken();
-        ASTNode *arg = parseExpression(0);
-
-        if (arg == NULL) {
-            syntaxError("Unexpected parameter", token);
-            break;
-        }
-
-        parserAddFunctionArgument(&func, arg);
-
-        if (currentToken().type != TOK_PARENTHESIS_CLOSE) {
-            if (currentToken().type != TOK_COMMA) {
-                syntaxError("Expected to close or more args", currentToken());
-                break;
-            }
-        }
+    if ( currentToken().type != TOK_SEMICOLON ) {
+        syntaxError("Expected ';' after function call", beforeToken() );
+        return func;
     }
 
-    if (isEnd()) {
-        syntaxError("Expected to close or more args", currentToken());
-        return NULL;
-    }
+    nextPos();
 
-    printf("[parseFunctionCall] BEFORE SKIPPING: %s \n", lexerTokenToString(currentToken().type));
-
-    nextPos(); // skip ')'
-    printf("[parseFunctionCall] AFTER SKIPPING: %s \n", lexerTokenToString(currentToken().type));
-    printf(" \n \n  === END FUNCTION CALL ===\n\n");
     return func;
 }
 
@@ -175,7 +188,7 @@ ASTNode *parseExpression(int deep) {
             break;
         case TOK_CHAR:
             node->type = AST_CHAR;
-            node->text = strdup(currentToken().text);
+            node->character = currentToken().text[0];
             break;
         case TOK_NUMBER:
             node->type = AST_NUMBER;

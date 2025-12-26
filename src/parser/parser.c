@@ -277,7 +277,35 @@ ASTNode parseTypeLiteral() {
 
     nextPos();
 
-    if ( currentToken().type != TOK_VARIABLE ) {
+    // Verify if is function definition
+    if ( currentToken().type == TOK_FUNCTION_DEFINITION ) {
+        ASTNode node = (ASTNode){
+            .type = AST_FUNCTION_DEFINITION,
+            .funcDefinition = {
+                .body = NULL
+            }
+        };
+
+        parseFunctionArguments( node.funcDefinition.arguments );
+
+        if ( currentToken().type != TOK_PARENTHESIS_OPEN ) {
+            syntaxError("Expected { after function definition", beforeToken() );
+        }
+
+        nextPos();
+
+        parseBody( &node.funcDefinition.body );
+
+        if (currentToken().type != TOK_BRACE_CLOSE) {
+            syntaxError("Expected '}' after body content", currentToken());
+        }
+
+        nextPos(); // Skipp }
+
+        return node;
+    }
+
+    if ( currentToken().type != TOK_VARIABLE) {
 
         ASTNodeType literal = fromTokVariableTypeToASTNodeType(type.type);
 
@@ -294,16 +322,6 @@ ASTNode parseTypeLiteral() {
         };
     }
 
-    /*
-    *if (isVariableDefinition()) {
-            if (evalVariableDefinition(parent, TOK_VARIABLE_TYPE_STRING, VARIABLE_TYPE_STRING)) continue;
-            if (evalVariableDefinition(parent, TOK_VARIABLE_TYPE_INT, VARIABLE_TYPE_INT)) continue;
-            if (evalVariableDefinition(parent, TOK_VARIABLE_TYPE_BOOLEAN, VARIABLE_TYPE_BOOLEAN)) continue;
-            if (evalVariableDefinition(parent, TOK_VARIABLE_TYPE_FLOAT, VARIABLE_TYPE_FLOAT)) continue;
-            if (evalVariableDefinition(parent, TOK_VARIABLE_TYPE_CHAR, VARIABLE_TYPE_CHAR)) continue;
-        }
-     *
-     */
 
     VarType varType;
     switch ( type.type ) {
@@ -350,129 +368,9 @@ ASTNode parseTypeLiteral() {
         }
     };
 
+    printf("LAST TOKEN ON PARSE TYPE LITERAL: %s \n", lexerTokenToString(currentToken().type));
     return definition;
 }
-
-bool evalVariableDefinition(ASTBlock *parent, TokenType type, VarType varType) {
-    Token tok = currentToken();
-    printf("==== SET VARIABLE ON: %s \n", lexerTokenToString(tok.type));
-    if (tok.type != type) {
-        printf("NO VALID! \n");
-        return false;
-    }
-    printf("IS VALID! +++++ \n");
-
-    nextPos(); // skip TYPE
-
-    Token varName = currentToken();
-    if (varName.type != TOK_PARENTHESIS_OPEN && varName.type != TOK_VARIABLE) {
-        syntaxError("Variable name/size expected", varName);
-        nextPos();
-        return false;
-    }
-
-    int size = -1;
-
-    // Optional (size)
-
-    if (varName.type == TOK_PARENTHESIS_OPEN) {
-        nextPos(); // SKIP '('
-
-        Token sizeTok = currentToken();
-        if (!evalExpectedToken(sizeTok, TOK_NUMBER, "Expected size inside STRING(...)"))
-            return false;
-
-        size = sizeTok.number;
-        nextPos();
-
-        if (!evalExpectedToken(currentToken(), TOK_PARENTHESIS_CLOSE, "Expected ')' after size"))
-            return false;
-
-        nextPos(); // skip ')'
-    }
-
-    // Now expect variable name
-    varName = currentToken();
-    nextPos();
-    if (!evalExpectedToken(varName, TOK_VARIABLE, "Variable name expected"))
-        return false;
-
-    // Expect '='
-    Token equals = currentToken();
-    nextPos();
-    if (!evalExpectedToken(equals, TOK_EQUALS, "Expected '='"))
-        return false;
-
-    // Parse value
-    // Token varValue = currentToken(); nextPos();
-    ASTNode *valueNode = parseExpression(0);
-    printf("[VAR][VALUE_NODE] DEFINITION: %s \n", astNodeTypeToString(valueNode->type));
-    // TODO check well the tokens, cuz if u pass like "String" this will throw like a normal function call instead of var definition
-
-    printf("[VAR] After value expresed: %s\n", lexerTokenToString(currentToken().type));
-
-    if (valueNode->type == AST_ERROR) {
-        return false;
-    }
-
-    printf("CURRENCT TOKEN: %s \n", lexerTokenToString(currentToken().type));
-    if (currentToken().type != TOK_SEMICOLON) {
-        syntaxError("Semicolon expected", beforeToken());
-        return false;
-    }
-
-    nextPos();
-
-    ASTNode definition = (ASTNode){
-        .type = AST_VARIABLE_DEFINITION,
-        .varDecl = {
-            .varType = varType,
-            .name = varName.text,
-            .value = valueNode,
-            .size = size
-        }
-    };
-
-    addASTNode(parent, definition);
-    return true;
-}
-
-
-// void parseFunctionCall2(ASTNode *parent) {
-//     Token functionCall = currentToken(); // function name token
-//     nextPos();
-//
-//     // Expect '('
-//     if (currentToken().type != TOK_PARENTHESIS_OPEN) {
-//         syntaxError("Expected '(' after function name", currentToken());
-//         return;
-//     }
-//
-//     nextPos(); // skip '('
-//
-//     // Parse argument (for now only one)
-//     // TODO accept comas as parameters, for now only has one
-//     ASTNode *arg = parseExpression(0);
-//
-//     if (currentToken().type != TOK_PARENTHESIS_CLOSE) {
-//         syntaxError("Function not closed", currentToken());
-//         return;
-//     }
-//
-//     nextPos(); // skip ')'
-//
-//     ASTNode *node = malloc(sizeof(ASTNode));
-//     node->type = AST_FUNCTION_CALL;
-//     node->funcCall.name = strdup(functionCall.text);
-//
-//     // Allocate children array
-//     node->funcCall.count = 1;
-//     node->funcCall.capacity = 1;
-//     node->funcCall.arguments = malloc(sizeof(ASTNode *));
-//     node->funcCall.arguments[0] = arg;
-//
-//     addASTNode(parent, *node);
-// }
 
 void *parseBody(ASTBlock *parent) {
     printf("----------------NEW BODY-------------\n\n");
@@ -484,11 +382,8 @@ void *parseBody(ASTBlock *parent) {
 
         // 2. VARIABLE DEFINITIONS
         if (isVariableDefinition()) {
-            if (evalVariableDefinition(parent, TOK_VARIABLE_TYPE_STRING, VARIABLE_TYPE_STRING)) continue;
-            if (evalVariableDefinition(parent, TOK_VARIABLE_TYPE_INT, VARIABLE_TYPE_INT)) continue;
-            if (evalVariableDefinition(parent, TOK_VARIABLE_TYPE_BOOLEAN, VARIABLE_TYPE_BOOLEAN)) continue;
-            if (evalVariableDefinition(parent, TOK_VARIABLE_TYPE_FLOAT, VARIABLE_TYPE_FLOAT)) continue;
-            if (evalVariableDefinition(parent, TOK_VARIABLE_TYPE_CHAR, VARIABLE_TYPE_CHAR)) continue;
+            addASTNode( parent, parseTypeLiteral() );
+            continue;
         }
 
         if (currentToken().type == TOK_FUNCTION_CALL) {

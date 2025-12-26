@@ -16,6 +16,9 @@ EnvValue *runFunctionCall(  SymbolTable *table, ASTNode *node );
 
 bool runExpressionBoolean( SymbolTable *symbolTable, ASTNode *node );
 
+void runFunctionDefinition( SymbolTable *variableTable, ASTNode *node);
+
+void runBody(SymbolTable *varTable, ASTBlock *block);
 
 void runtime(void);
 

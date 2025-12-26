@@ -19,4 +19,5 @@ add_executable(KrisLang main.c
         src/runtime/environment.h
         src/helpers/helper.c
         src/helpers/helper.h
+        src/runtime/run_function.c
 )

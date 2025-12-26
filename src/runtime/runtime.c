@@ -54,16 +54,31 @@ void printLiteral(EnvValue *value) {
  * @return
  */
 EnvValue *runFunctionCall(SymbolTable *table, ASTNode *node) {
+    // ---------------------------
+    // Built-in: print
+    // ---------------------------
     if (strcmp(node->funcCall.name, "print") == 0) {
+        if (node->funcCall.arguments.count < 1) {
+            syntaxError("print() expects at least 1 argument", beforeToken());
+        }
+
         EnvValue *result = runExpression(table, node->funcCall.arguments.children[0]);
 
         printLiteral(result);
         return envValueNull();
     }
 
+    // ---------------------------
+    // Built-in: input
+    // ---------------------------
     if (strcmp(node->funcCall.name, "input") == 0) {
+        EnvValue *result = NULL;
+
+        if (node->funcCall.arguments.count > 0) {
+            result = runExpression(table, node->funcCall.arguments.children[0]);
+        }
         // First args to show if it has shown on console
-        EnvValue *result = runExpression(table, node->funcCall.arguments.children[0]);
+
 
         // TODO check correct buffer
         char buffer[256];
@@ -73,7 +88,9 @@ EnvValue *runFunctionCall(SymbolTable *table, ASTNode *node) {
             printLiteral(result);
 
         fflush(stdout);
-        fgets(buffer, sizeof(buffer), stdin);
+        if (!fgets(buffer, sizeof(buffer), stdin)) {
+            syntaxError("Someting happended on input", beforeToken() );
+        }
         buffer[strcspn(buffer, "\n")] = '\0'; // remove newline
 
         if (node->funcCall.arguments.count > 1) {
@@ -120,17 +137,17 @@ EnvValue *runFunctionCall(SymbolTable *table, ASTNode *node) {
                     return envValueBoolean(false);
                 case ENV_CHAR:
                     // Empty input is not allower
-                    if (buffer[0] == '\0') syntaxError("Expected a character, got empty input", currentToken());
+                    if (buffer[0] == '\0') syntaxError("Expected a character, got empty input", beforeToken());
 
                     // more than one character is not allowed
                     if (buffer[1] != '\0')
-                        syntaxError("Expected a character", currentToken());
+                        syntaxError("Expected a character", beforeToken());
                     return envValueCharacter(buffer[0]);
                 case ENV_NULL:
-                    syntaxError("Expected a non-null argument", currentToken());
+                    syntaxError("Expected a non-null argument", beforeToken());
                     break;
                 case ENV_VOID:
-                    syntaxError("Expected a non-void argument", currentToken());
+                    syntaxError("Expected a non-void argument", beforeToken());
                     break;
                 default: return envValueString(buffer);
             }
@@ -138,7 +155,53 @@ EnvValue *runFunctionCall(SymbolTable *table, ASTNode *node) {
         return envValueString(buffer);
     }
 
-    syntaxError( strFormat("Unknow Function: %s", node->funcCall.name), currentToken() );
+    // ---------------------------
+    // User-defined function
+    // ---------------------------
+    EnvFunctionDefinition *definition = envGetFunction(table, node->funcCall.name);
+
+    SymbolTable *funcTable = symbolTableFromParent(table);
+
+    if (definition->arguments->count > node->funcCall.arguments.count) {
+        syntaxError(
+            strFormat(
+                "Function '%s' expects %d argment(s)",
+                node->funcCall.name,
+                definition->arguments->count
+                ),
+            beforeToken());
+    }
+
+    if (definition->arguments->count < node->funcCall.arguments.count) {
+        syntaxError(strFormat("You're giving %d argment(s) more than need Function '%s' ",
+                              node->funcCall.arguments.count - definition->arguments->count, node->funcCall.name),
+                    beforeToken());
+    }
+
+    for (int i = 0; i < definition->arguments->count; i++) {
+        ASTNode *param = definition->arguments->children[i]; // AST_FUNCTION_PARAMETER
+        ASTNode *argExpr = node->funcCall.arguments.children[i]; // expression
+
+        // Evaluate argument expression
+        EnvValue *value = runExpression(table, argExpr);
+
+        // Create a variable in the function scope
+        Environment env = {
+            .type = ENV_TYPE_VARIABLE,
+            .name = strdup(param->varDecl.name),
+            .variable = {
+                .type = param->varDecl.varType,
+                .value = *value
+            }
+        };
+
+        symbolTableAddChild(funcTable, env);
+    }
+
+
+    runBody(funcTable, definition->body);
+
+    freeSymbolTable(funcTable); // forget the table after function
     return envValueNull();
 }
 
@@ -159,7 +222,7 @@ EnvValue *runExpression(SymbolTable *symbolTable, ASTNode *node) {
         // VARIABLES
         // ============================
         case AST_VARIABLE_CAST:
-            return envGetValue(symbolTable, node->text);
+            return envGetVariableValue(symbolTable, node->text);
 
         // ============================
         // UNARY
@@ -170,7 +233,7 @@ EnvValue *runExpression(SymbolTable *symbolTable, ASTNode *node) {
                 switch (value->type) {
                     case ENV_INT: return envValueInt(-value->number);
                     case ENV_FLOAT: return envValueFloat(-value->decimal);
-                        // TODO SUPPORT ( ... )
+                    // TODO SUPPORT ( ... )
                     default: syntaxError("Unary '-' can only be applied to numbers", currentToken());
                         return envValueNull();
                 }
@@ -211,6 +274,38 @@ EnvValue *runExpression(SymbolTable *symbolTable, ASTNode *node) {
 
             return envValueString(buf);
         }
+        case AST_SUBTRACT: {
+            EnvValue *left  = runExpression(symbolTable, node->binary.left);
+            EnvValue *right = runExpression(symbolTable, node->binary.right);
+
+            if (!left || !right) {
+                syntaxError("Invalid operands for subtraction", beforeToken());
+            }
+
+            // INT - INT
+            if (left->type == ENV_INT && right->type == ENV_INT) {
+                return envValueInt(left->number - right->number);
+            }
+
+            // FLOAT - FLOAT
+            if (left->type == ENV_FLOAT && right->type == ENV_FLOAT) {
+                return envValueFloat(left->decimal - right->decimal);
+            }
+
+            // INT - FLOAT
+            if (left->type == ENV_INT && right->type == ENV_FLOAT) {
+                return envValueFloat((double)left->number - right->decimal);
+            }
+
+            // FLOAT - INT
+            if (left->type == ENV_FLOAT && right->type == ENV_INT) {
+                return envValueFloat(left->decimal - (double)right->number);
+            }
+
+            syntaxError("Unsupported types for subtraction", beforeToken());
+            return envValueNull();
+        }
+
         case AST_FUNCTION_CALL:
             return runFunctionCall(symbolTable, node);
 
@@ -340,6 +435,9 @@ void runBody(SymbolTable *varTable, ASTBlock *block) {
         switch (child->type) {
             case AST_VARIABLE_DEFINITION:
                 envDeclare(varTable, child);
+                break;
+            case AST_FUNCTION_DEFINITION:
+                envDeclareFunction(varTable, child);
                 break;
             case AST_FUNCTION_CALL:
                 runFunctionCall(varTable, child);

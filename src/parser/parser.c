@@ -10,6 +10,7 @@
 #include <string.h>
 
 #include "../debug.h"
+#include "../helpers/helper.h"
 
 int syntax_error_count = 0;
 
@@ -75,9 +76,12 @@ char *astNodeTypeToString(ASTNodeType type) {
             return "AST_TYPE_LITERAL";
         case AST_VARIABLE_CAST:
             return "AST_VARIABLE_CAST";
-
+        case AST_FUNCTION_PARAMETER:
+            return "AST_FUNCTION_PARAMETER";
         case AST_CONCAT:
             return "AST_CONCAT";
+        case AST_SUBTRACT:
+            return "AST_SUBTRACT";
         case AST_FUNCTION_CALL:
             return "AST_FUNCTION_CALL";
         case AST_LOGICAL_IF:
@@ -113,41 +117,6 @@ Token beforeToken() {
 }
 
 ASTNode *addASTNode(ASTBlock *parent, ASTNode child) {
-    // if ( parent->type == AST_LOGICAL_IF ) {
-    //
-    //     // Grow children array if needed
-    //     if (parent->logicalIf.count >= parent->logicalIf.capacity) {
-    //         parent->logicalIf.capacity = parent->logicalIf.capacity
-    //                                      ? parent->logicalIf.capacity * 2
-    //                                      : 4;
-    //
-    //         parent->logicalIf.children = realloc(
-    //             parent->logicalIf.children,
-    //             parent->logicalIf.capacity * sizeof(ASTNode *)
-    //         );
-    //
-    //         if (!parent->logicalIf.children) {
-    //             perror("realloc");
-    //             exit(EXIT_FAILURE);
-    //         }
-    //     }
-    //
-    //     // Allocate new node
-    //     ASTNode *node = malloc(sizeof(ASTNode));
-    //     if (!node) {
-    //         perror("malloc");
-    //         exit(EXIT_FAILURE);
-    //     }
-    //
-    //     *node = child;
-    //     parent->logicalIf.children[ parent->logicalIf.count++ ] = node;
-    //     return parent;
-    // }
-
-    // is not block type
-    // if (parent->type != AST_BLOCK && parent->type != AST_PROGRAM)
-    //     abort();
-
     // Grow children array if needed
     if (parent->count >= parent->capacity) {
         parent->capacity = parent->capacity
@@ -250,7 +219,7 @@ bool isVariableDefinition() {
 ASTNodeType fromTokVariableTypeToASTNodeType(TokenType type) {
     switch (type) {
         case TOK_VARIABLE_TYPE_INT: return AST_NUMBER;
-        case TOK_VARIABLE_TYPE_STRING: return AST_VARIABLE_CAST;
+        case TOK_VARIABLE_TYPE_STRING: return AST_TEXT;
         case TOK_VARIABLE_TYPE_BOOLEAN: return AST_BOOLEAN;
         case TOK_VARIABLE_TYPE_FLOAT : return AST_NUMBER_DECIMAL;
         case TOK_VARIABLE_TYPE_CHAR: return AST_CHAR;
@@ -259,9 +228,24 @@ ASTNodeType fromTokVariableTypeToASTNodeType(TokenType type) {
     }
 }
 
+VarType parseTokToVarType() {
+    switch (currentToken().type) {
+        case TOK_VARIABLE_TYPE_STRING: return VARIABLE_TYPE_STRING;
+        case TOK_VARIABLE_TYPE_INT: return VARIABLE_TYPE_INT;
+        case TOK_VARIABLE_TYPE_FLOAT : return VARIABLE_TYPE_FLOAT;
+        case TOK_VARIABLE_TYPE_BOOLEAN: return VARIABLE_TYPE_BOOLEAN;
+        case TOK_VARIABLE_TYPE_CHAR: return VARIABLE_TYPE_CHAR;
+        case TOK_VARIABLE_TYPE_VOID: return VARIABLE_TYPE_NEVER;
+        default:
+            syntaxError("The variable type was not expected", beforeToken() );
+            return VARIABLE_TYPE_UNKNOWN;
+    }
+}
 
 ASTNode parseTypeLiteral() {
     Token type = currentToken();
+    VarType varType = parseTokToVarType();
+
     printf("\n\n\n(1) - CURRENT TOKEN: %s\n", lexerTokenToString(currentToken().type));
 
 
@@ -288,33 +272,10 @@ ASTNode parseTypeLiteral() {
 
     // Verify if is function definition
     if ( currentToken().type == TOK_FUNCTION_CALL ) {
-        ASTNode node = (ASTNode){
-            .type = AST_FUNCTION_DEFINITION,
-            .funcDefinition = {
-                .body = NULL,
-                .name = strdup(currentToken().text)
-            }
-        };
-
-        printf("\n\n\nIS TOK_FUNCTION_CALL\n\n\n");
-        parseFunctionArguments( &node.funcDefinition.arguments );
-
-        if ( currentToken().type != TOK_BRACE_OPEN ) {
-            syntaxError("Expected { after function definition", beforeToken() );
-        }
-
-        nextPos();
-        printf("(4) - CURRENT TOKEN: %s\n\n\n", lexerTokenToString(currentToken().type));
-        parseBody( &node.funcDefinition.body );
-
-        if (currentToken().type != TOK_BRACE_CLOSE) {
-            syntaxError("Expected '}' after body content", currentToken());
-        }
-
-        nextPos(); // Skipp }
-
-        return node;
+        return parseFunctionDefinition();
     }
+
+    printf( "[PARSERTYPELITERAL] Current: %s \n", lexerTokenToString(currentToken().type));
 
     if ( currentToken().type != TOK_VARIABLE) {
 
@@ -334,16 +295,6 @@ ASTNode parseTypeLiteral() {
     }
 
 
-    VarType varType;
-    switch ( type.type ) {
-        case TOK_VARIABLE_TYPE_STRING: varType = VARIABLE_TYPE_STRING; break;
-        case TOK_VARIABLE_TYPE_INT: varType = VARIABLE_TYPE_INT; break;
-        case TOK_VARIABLE_TYPE_BOOLEAN: varType = VARIABLE_TYPE_BOOLEAN; break;
-        case TOK_VARIABLE_TYPE_CHAR: varType = VARIABLE_TYPE_CHAR; break;
-        case TOK_VARIABLE_TYPE_FLOAT: varType = VARIABLE_TYPE_FLOAT; break;
-        case TOK_VARIABLE_TYPE_VOID: varType = VARIABLE_TYPE_NEVER; break;
-        default: varType = VARIABLE_TYPE_UNKNOWN; break;
-    }
 
     // Now expect variable name
     varName = currentToken();
@@ -353,8 +304,8 @@ ASTNode parseTypeLiteral() {
 
     // Expect '='
     Token equals = currentToken();
-    nextPos();
     evalExpectedToken(equals, TOK_EQUALS, "Expected '='");
+    nextPos();
 
     // Parse value
     // Token varValue = currentToken(); nextPos();
@@ -364,7 +315,7 @@ ASTNode parseTypeLiteral() {
 
     printf("CURRENCT TOKEN: %s \n", lexerTokenToString(currentToken().type));
     if (currentToken().type != TOK_SEMICOLON) {
-        syntaxError("Semicolon expected", beforeToken());
+        syntaxError(strFormat("Semicolon expected - Current: %s", lexerTokenToString(currentToken().type) ), beforeToken());
     }
 
     nextPos();
@@ -386,6 +337,8 @@ ASTNode parseTypeLiteral() {
 void *parseBody(ASTBlock *parent) {
     printf("----------------NEW BODY-------------\n\n");
     while (!isEnd() && currentToken().type != TOK_BRACE_CLOSE) {
+        printf("\nIN WHILE BODY \n\n");
+
         if (currentToken().type == TOK_LOGICAL_IF) {
             parseNodeIf(parent);
             continue;
@@ -400,7 +353,16 @@ void *parseBody(ASTBlock *parent) {
         if (currentToken().type == TOK_FUNCTION_CALL) {
             printf("IS TOK_FUNCTION CALL: TOKEN: %s  \n \n", lexerTokenToString(currentToken().type));
             ASTNode *func = parseFunctionCall();
+
+            if (currentToken().type != TOK_SEMICOLON) {
+                syntaxError("Expected ';' after function call", beforeToken());
+                return func;
+            }
+
+            nextPos(); // Skip ;
+
             addASTNode(parent, *func);
+            printf("FINISHED PARSING TOK_FUNCTION_CALL \n");
             continue;
         }
 

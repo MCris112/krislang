@@ -137,6 +137,8 @@ void parserPrintASTNode(ASTNode *node, int indent) {
             break;
         case AST_FUNCTION_DEFINITION: printf(" (%s)", node->funcDefinition.name);
             break;
+        case AST_FUNCTION_PARAMETER: printf(" (%s %s)", parserVarTypeToString(node->varDecl.varType), node->varDecl.name );
+            break;
         case AST_VARIABLE_CAST: printf(" (%s)", node->text);
             break;
         default: break;
@@ -152,7 +154,9 @@ void parserPrintASTNode(ASTNode *node, int indent) {
             break;
         case AST_VARIABLE_DEFINITION: parserPrintASTNode(node->varDecl.value, indent + 1);
             break;
-        case AST_CONCAT: parserPrintASTNode(node->binary.left, indent + 1);
+        case AST_CONCAT:
+        case AST_SUBTRACT:
+            parserPrintASTNode(node->binary.left, indent + 1);
             parserPrintASTNode(node->binary.right, indent + 1);
             break;
         case AST_FUNCTION_CALL:
@@ -163,7 +167,7 @@ void parserPrintASTNode(ASTNode *node, int indent) {
         case AST_FUNCTION_DEFINITION: {
             // ARGUMENTS
             for (int i = 0; i < indent + 1; i++) printf("  ");
-            printf("ARGUMENTS:\n");
+            printf("ARGUMENTS (%d): \n", node->funcDefinition.arguments.count);
             for (int i = 0; i < node->funcDefinition.arguments.count; i++) {
                 parserPrintASTNode(node->funcDefinition.arguments.children[i], indent + 1);
             }
@@ -272,63 +276,73 @@ void printSymbolTable(SymbolTable *variableTable) {
     for (int i = 0; i < variableTable->count; i++) {
         Environment *sym = &variableTable->symbols[i];
 
-        printf("name: %-10s type: ", sym->name);
+        printf("name: %-10s ", sym->name);
 
-        // Print declared type
-        switch (sym->type) {
-            case VARIABLE_TYPE_STRING:
-                printf("STRING   ");
-                break;
-            case VARIABLE_TYPE_INT:
-                printf("INT      ");
-                break;
-            case VARIABLE_TYPE_FLOAT:
-                printf("FLOAT    ");
-                break;
-            case VARIABLE_TYPE_BOOLEAN:
-                printf("BOOLEAN  ");
-                break;
-            case VARIABLE_TYPE_CHAR:
-                printf("CHAR     ");
-                break;
-            default:
-                printf("UNKNOWN  ");
-                break;
+        // -----------------------------
+        // VARIABLE
+        // -----------------------------
+        if (sym->type == ENV_TYPE_VARIABLE) {
+            printf("kind: VARIABLE  declared-type: ");
+
+            switch (sym->variable.type) {
+                case VARIABLE_TYPE_STRING:  printf("STRING   "); break;
+                case VARIABLE_TYPE_INT:     printf("INT      "); break;
+                case VARIABLE_TYPE_FLOAT:   printf("FLOAT    "); break;
+                case VARIABLE_TYPE_BOOLEAN: printf("BOOLEAN  "); break;
+                case VARIABLE_TYPE_CHAR:    printf("CHAR     "); break;
+                default:                    printf("UNKNOWN  "); break;
+            }
+
+            printf(" value: ");
+
+            switch (sym->variable.value.type) {
+                case ENV_STRING:
+                    if (sym->variable.value.text)
+                        printf("\"%s\"", sym->variable.value.text);
+                    else
+                        printf("NULL_STRING");
+                    break;
+
+                case ENV_INT:
+                    printf("%d", sym->variable.value.number);
+                    break;
+
+                case ENV_FLOAT:
+                    printf("%f", sym->variable.value.decimal);
+                    break;
+
+                case ENV_BOOL:
+                    printf(sym->variable.value.boolean ? "TRUE" : "FALSE");
+                    break;
+
+                case ENV_CHAR:
+                    if (sym->variable.value.character == '\0') printf("'\\0'");
+                    else if (sym->variable.value.character == '\n') printf("'\\n'");
+                    else if (sym->variable.value.character == '\t') printf("'\\t'");
+                    else printf("'%c'", sym->variable.value.character);
+                    break;
+
+                case ENV_VOID:
+                    printf("VOID");
+                    break;
+
+                case ENV_NULL:
+                    printf("NULL");
+                    break;
+
+                default:
+                    printf("<UNKNOWN>");
+                    break;
+            }
         }
 
-        printf("value: ");
-
-        // Print runtime value
-        switch (sym->value.type) {
-            case ENV_STRING:
-                if (sym->value.text) printf("\"%s\"", sym->value.text);
-                else printf("NULL_STRING");
-                break;
-                break;
-            case ENV_INT:
-                printf("%d", sym->value.number);
-                break;
-            case ENV_FLOAT:
-                printf("%f", sym->value.decimal);
-                break;
-            case ENV_BOOL:
-                printf(sym->value.boolean ? "TRUE" : "FALSE");
-                break;
-            case ENV_CHAR:
-                if (sym->value.character == '\0') printf("'\\0'");
-                else if (sym->value.character == '\n') printf("'\\n'");
-                else if (sym->value.character == '\t') printf("'\\t'");
-                else printf("'%c'", sym->value.character);
-                break;
-            case ENV_VOID:
-                printf("VOID");
-                break;
-            case ENV_NULL:
-                printf("NULL");
-                break;
-            default:
-                printf("<UNKNOW>");
-                break;
+        // -----------------------------
+        // FUNCTION
+        // -----------------------------
+        else if (sym->type == ENV_TYPE_FUNCTION) {
+            printf("kind: FUNCTION  args: %d  body: %d",
+                   sym->function.arguments ? sym->function.arguments->count : 0,
+                   sym->function.body->count);
         }
 
         printf("\n");

@@ -14,6 +14,7 @@ typedef enum {
 
     AST_FUNCTION_CALL,
     AST_FUNCTION_DEFINITION,
+    AST_FUNCTION_PARAMETER,
     AST_LOGICAL_IF,
 
     AST_TYPE_LITERAL,
@@ -28,6 +29,7 @@ typedef enum {
     AST_ERROR,
 
     AST_CONCAT, // CONCAT CERTAIN VALUES
+    AST_SUBTRACT,
     AST_COMPARE,
     AST_UNARY,
 
@@ -154,6 +156,10 @@ void nextPos();
 
 bool isEnd();
 
+bool isVariableDefinition();
+
+VarType parseTokToVarType();
+
 Token currentToken();
 
 Token beforeToken();
@@ -176,6 +182,8 @@ void *parseBody(ASTBlock *parent);
 ASTNode parseTypeLiteral();
 
 ASTNode *parseExpression(int deep );
+
+ASTNode parseFunctionDefinition();
 
 void parseFunctionArguments( ASTFunctionArguments *arguments  );
 

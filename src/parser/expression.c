@@ -7,57 +7,38 @@
 #include <string.h>
 
 #include "../debug.h"
+#include "../helpers/helper.h"
 
-// bool evalVariableDefinition() {
-//     ASTNode *node = malloc(sizeof(ASTNode));
-//     if (!node) {
-//         perror("malloc");
-//         exit(EXIT_FAILURE);
-//     }
-//
-//     Token token = currentToken();
-//
-//     switch (token.type) {
-//         case TOK_NUMBER:
-//             *node = ( ASTNode){
-//                 .type = AST_NUMBER,
-//                 .number = token.number
-//             };
-//             break;
-//         case TOK_TEXT:
-//             *node = ( ASTNode){
-//                 .type = AST_TEXT,
-//                 .text = token.text
-//             };
-//             break;
-//         case TOK_NUMBER_DECIMAL:
-//             *node = ( ASTNode){
-//                 .type = AST_NUMBER_DECIMAL,
-//                 .decimal = token.decimal
-//             };
-//             break;
-//         case TOK_CHAR:
-//             *node = ( ASTNode){
-//                 .type = AST_CHAR,
-//                 .text = token.text
-//             };
-//             break;
-//         case TOK_LITERAL_BOOLEAN:
-//             *node = ( ASTNode){
-//                 .type = AST_BOOLEAN,
-//                 .boolean = token.boolean
-//             };
-//             break;
-//         default:
-//             // Not a variable type
-//             return false;
-//     }
-//
-//     return true;
-// }
+ASTNode *parseParameter() {
+    // Expect a type
+    if (!isVariableDefinition() ){
+        syntaxError("Expected parameter type", currentToken());
+    }
+
+    VarType type = parseTokToVarType(); // STRING, INT, FLOAT, etc.
+    nextPos(); // skip type token
+
+    // Expect a variable name
+    if (currentToken().type != TOK_VARIABLE) {
+        syntaxError("Expected parameter name", currentToken());
+    }
+
+    char *name = strdup(currentToken().text);
+    nextPos(); // skip $nombre
+
+    // Build AST node
+    ASTNode *param = malloc(sizeof(ASTNode));
+    param->type = AST_FUNCTION_PARAMETER;
+    param->varDecl.varType = type;
+    param->varDecl.name = name;
+    param->varDecl.value = NULL; // parameters have no initial value
+
+    printf("[parseParameter] Name: %s\n", name);
+    return param;
+}
+
 
 void parserAddFunctionArgument(ASTFunctionArguments *arguments, ASTNode *arg) {
-    printf("[parserAddFunctionArgument][IN]\n");
     if (arguments->children == NULL) {
         arguments->capacity = 8;
         arguments->count = 0;
@@ -69,7 +50,6 @@ void parserAddFunctionArgument(ASTFunctionArguments *arguments, ASTNode *arg) {
     }
     // Upper memory size for function if is need it
     if (arguments->count >= arguments->capacity) {
-        printf("[parserAddFunctionArgument][INSIDE_CONDITION_CAPACITY]\n");
         arguments->capacity *= 2;
         ASTNode **tmp = realloc(arguments->children, arguments->capacity * sizeof(ASTNode *));
         if (!tmp) {
@@ -77,13 +57,73 @@ void parserAddFunctionArgument(ASTFunctionArguments *arguments, ASTNode *arg) {
             exit(EXIT_FAILURE);
         }
         arguments->children = tmp;
-        printf("[parserAddFunctionArgument][AFTER_REALLOC]\n");
-
     }
 
     arguments->children[arguments->count++] = arg;
-    printf("[parserAddFunctionArgument][OUT]\n");
 }
+
+ASTNode parseFunctionDefinition() {
+    ASTNode node = (ASTNode){
+        .type = AST_FUNCTION_DEFINITION,
+        .funcDefinition = {
+            .body = NULL,
+            .name = strdup(currentToken().text),
+            .arguments = (ASTFunctionArguments){0}
+        }
+    };
+
+    nextPos(); //Skip AST_FUNCTION_DEFINITION
+
+    if (currentToken().type != TOK_PARENTHESIS_OPEN) {
+        syntaxError("Expected ( after function name", beforeToken());
+    }
+
+    nextPos(); // skip (
+
+    while (!isEnd() && currentToken().type != TOK_PARENTHESIS_CLOSE) {
+        //nextPos(); // skip coma or first parentesis
+
+        printf("[FUNC_DEF] INSIDE WHILE PARSE FUNCTION ARGS, Current: %s \n", lexerTokenToString(currentToken().type));
+        Token token = currentToken(); // for error debug
+        ASTNode *arg = parseParameter();
+
+        parserAddFunctionArgument( &node.funcDefinition.arguments, arg);
+        printf("[FUNC_DEF] ARG ADDED! now: %d: %s \n", node.funcDefinition.arguments.count, lexerTokenToString(currentToken().type));
+
+        if (currentToken().type == TOK_COMMA) {
+            nextPos(); // skip comma
+        } else if (currentToken().type != TOK_PARENTHESIS_CLOSE) {
+            syntaxError("Expected ',' or ')'", currentToken());
+        }
+    }
+
+    if (isEnd()) {
+        syntaxError("Expected to close or more args", currentToken());
+    }
+
+    if (currentToken().type != TOK_PARENTHESIS_CLOSE) {
+        syntaxError("Expected ')'", currentToken());
+    }
+
+    nextPos(); // skip ')'
+
+    if ( currentToken().type != TOK_BRACE_OPEN ) {
+        syntaxError("Expected { after function definition", beforeToken() );
+    }
+
+    nextPos();
+    printf("(4) - CURRENT TOKEN: %s\n\n\n", lexerTokenToString(currentToken().type));
+    parseBody( &node.funcDefinition.body );
+
+    if (currentToken().type != TOK_BRACE_CLOSE) {
+        syntaxError("Expected '}' after body content", currentToken());
+    }
+
+    nextPos(); // Skipp }
+
+    return node;
+}
+
 
 /**
  * Read all token and parse the arguments, also create the ASTNode inside
@@ -95,9 +135,6 @@ void parseFunctionArguments(ASTFunctionArguments *arguments) {
 
     nextPos(); //Skip TOK_FUNCTION_CALL
 
-    printf("(3) - CURRENT TOKEN: %s\n\n\n", lexerTokenToString(currentToken().type));
-
-
     if (currentToken().type != TOK_PARENTHESIS_OPEN) {
         syntaxError("Expected ( after function name", beforeToken());
     }
@@ -107,8 +144,7 @@ void parseFunctionArguments(ASTFunctionArguments *arguments) {
     while (!isEnd() && currentToken().type != TOK_PARENTHESIS_CLOSE) {
         //nextPos(); // skip coma or first parentesis
 
-        printf("INSIDE WHILE PARSE FUNCTION ARGS, Current: %s \n", lexerTokenToString(currentToken().type));
-        Token token = currentToken();
+        Token token = currentToken(); // for error debug
         ASTNode *arg = parseExpression(0);
 
         if (arg == NULL) {
@@ -118,11 +154,10 @@ void parseFunctionArguments(ASTFunctionArguments *arguments) {
 
         parserAddFunctionArgument(arguments, arg);
 
-        if (currentToken().type != TOK_PARENTHESIS_CLOSE) {
-            if (currentToken().type != TOK_COMMA) {
-                syntaxError("Expected to close or more args", currentToken());
-                break;
-            }
+        if (currentToken().type == TOK_COMMA) {
+            nextPos(); // skip comma
+        } else if (currentToken().type != TOK_PARENTHESIS_CLOSE) {
+            syntaxError("Expected ',' or ')'", currentToken());
         }
     }
 
@@ -131,8 +166,11 @@ void parseFunctionArguments(ASTFunctionArguments *arguments) {
         return;
     }
 
+    if (currentToken().type != TOK_PARENTHESIS_CLOSE) {
+        syntaxError("Expected ')'", currentToken());
+    }
+
     nextPos(); // skip ')'
-    printf("[ParseFunctionArguments][AFTER] Current: %s \n", lexerTokenToString(currentToken().type));
 }
 
 ASTNode *parseFunctionCall() {
@@ -142,16 +180,7 @@ ASTNode *parseFunctionCall() {
     func->type = AST_FUNCTION_CALL;
     func->funcCall.name = strdup(functionCall.text);
 
-    printf("[parseFunctionCall][START] Current: %s \n", lexerTokenToString(currentToken().type));
     parseFunctionArguments(&func->funcCall.arguments);
-    printf("[parseFunctionCall][PARSED] Current: %s \n", lexerTokenToString(currentToken().type));
-
-    if (currentToken().type != TOK_SEMICOLON) {
-        syntaxError("Expected ';' after function call", beforeToken());
-        return func;
-    }
-
-    nextPos();
 
     return func;
 }
@@ -231,7 +260,7 @@ ASTNode *parseExpression(int deep) {
             needToSkip = false;
             break;
         default:
-            syntaxError("Expected expression", token);
+            syntaxError(strFormat("Expected expression, - Current: %s", lexerTokenToString(token.type)), token);
             ASTNode *err = malloc(sizeof(ASTNode));
             err->type = AST_ERROR;
             return err;
@@ -262,6 +291,21 @@ ASTNode *parseExpression(int deep) {
 
         node = concat;
     }
+
+    // SUBTRACT (-)
+    if (currentToken().type == TOK_MINUS) {
+        nextPos(); // consume '-'
+
+        ASTNode *right = parseExpression(deep);
+
+        ASTNode *sub = malloc(sizeof(ASTNode));
+        sub->type = AST_SUBTRACT;
+        sub->binary.left = node;
+        sub->binary.right = right;
+
+        node = sub;
+    }
+
 
     // COMPARE (==)
     if (currentToken().type == TOK_EQUAL_EQUAL) {

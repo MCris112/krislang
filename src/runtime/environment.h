@@ -23,6 +23,11 @@ typedef enum {
     ENV_NULL
 } EnvValueType;
 
+typedef enum {
+    ENV_TYPE_VARIABLE,
+    ENV_TYPE_FUNCTION
+} EnvironmentType;
+
 typedef struct {
     EnvValueType type;
 
@@ -36,13 +41,29 @@ typedef struct {
 } EnvValue;
 
 typedef struct {
+    ASTBlock *body;
+    ASTFunctionArguments *arguments;
+} EnvFunctionDefinition;
+
+typedef struct {
+    EnvironmentType type;
     char *name;
-    VarType type;
-    EnvValue value;
+
+    union {
+        struct {
+            VarType type;
+            EnvValue value;
+        } variable;
+
+        EnvFunctionDefinition function;
+    };
+
 } Environment;
 
 
-typedef struct {
+typedef struct SymbolTable {
+    struct SymbolTable *parent; // in case exists
+
     Environment *symbols;
     int count;
     int capacity;
@@ -64,10 +85,21 @@ EnvValue *envValueVoid(void);
 
 char* envValueToString(EnvValue *v);
 
+
+void symbolTableAddChild(SymbolTable *symbolTable, Environment environment);
+
 void initSymbolTable(SymbolTable **variableTable);
 
-EnvValue *envGetValue(SymbolTable *variableTable, char *name);
+SymbolTable *symbolTableFromParent(SymbolTable *parent);
+
+EnvValue *envGetVariableValue(SymbolTable *variableTable, char *name);
+
+EnvFunctionDefinition *envGetFunction(SymbolTable *variableTable, char *name);
 
 void envDeclare(SymbolTable *variableTable, ASTNode *node);
+
+void envDeclareFunction(SymbolTable *variableTable, ASTNode *node);
+
+void freeSymbolTable(SymbolTable *table);
 
 #endif //KRISLANG_ENVIRONMENT_H

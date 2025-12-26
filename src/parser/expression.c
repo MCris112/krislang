@@ -56,20 +56,33 @@
 //     return true;
 // }
 
-void parserAddFunctionArgument(ASTFunctionArguments arguments, ASTNode *arg) {
-
+void parserAddFunctionArgument(ASTFunctionArguments *arguments, ASTNode *arg) {
+    printf("[parserAddFunctionArgument][IN]\n");
+    if (arguments->children == NULL) {
+        arguments->capacity = 8;
+        arguments->count = 0;
+        arguments->children = malloc(arguments->capacity * sizeof(ASTNode *));
+        if (!arguments->children) {
+            fprintf(stderr, "Out of memory allocating function arguments\n");
+            exit(EXIT_FAILURE);
+        }
+    }
     // Upper memory size for function if is need it
-    if ( arguments.count >= arguments.capacity) {
-        arguments.capacity = arguments.capacity ? arguments.capacity * 2 : 8;
+    if (arguments->count >= arguments->capacity) {
+        printf("[parserAddFunctionArgument][INSIDE_CONDITION_CAPACITY]\n");
+        arguments->capacity *= 2;
+        ASTNode **tmp = realloc(arguments->children, arguments->capacity * sizeof(ASTNode *));
+        if (!tmp) {
+            fprintf(stderr, "Out of memory growing function arguments\n");
+            exit(EXIT_FAILURE);
+        }
+        arguments->children = tmp;
+        printf("[parserAddFunctionArgument][AFTER_REALLOC]\n");
 
-        arguments.children = realloc(
-            arguments.children,
-            arguments.capacity * sizeof(ASTNode *)
-        );
     }
 
-    arguments.children[arguments.count] = arg;
-    arguments.count++;
+    arguments->children[arguments->count++] = arg;
+    printf("[parserAddFunctionArgument][OUT]\n");
 }
 
 /**
@@ -77,16 +90,24 @@ void parserAddFunctionArgument(ASTFunctionArguments arguments, ASTNode *arg) {
  * so this can avoid to forget on let empty model and couses crash
  * @param arguments
  */
-void parseFunctionArguments( ASTFunctionArguments arguments  ) {
-    arguments = (ASTFunctionArguments){
-        .children = NULL,
-        .count = 0,
-        .capacity = 8,
-    };
+void parseFunctionArguments(ASTFunctionArguments *arguments) {
+    *arguments = (ASTFunctionArguments){0}; // CRITICAL
+
+    nextPos(); //Skip TOK_FUNCTION_CALL
+
+    printf("(3) - CURRENT TOKEN: %s\n\n\n", lexerTokenToString(currentToken().type));
+
+
+    if (currentToken().type != TOK_PARENTHESIS_OPEN) {
+        syntaxError("Expected ( after function name", beforeToken());
+    }
+
+    nextPos();
 
     while (!isEnd() && currentToken().type != TOK_PARENTHESIS_CLOSE) {
-        nextPos(); // skip coma or first parentesis
+        //nextPos(); // skip coma or first parentesis
 
+        printf("INSIDE WHILE PARSE FUNCTION ARGS, Current: %s \n", lexerTokenToString(currentToken().type));
         Token token = currentToken();
         ASTNode *arg = parseExpression(0);
 
@@ -111,26 +132,22 @@ void parseFunctionArguments( ASTFunctionArguments arguments  ) {
     }
 
     nextPos(); // skip ')'
+    printf("[ParseFunctionArguments][AFTER] Current: %s \n", lexerTokenToString(currentToken().type));
 }
 
 ASTNode *parseFunctionCall() {
     Token functionCall = currentToken(); // function name token
-    nextPos();
-
-    // Expect '('
-    if (currentToken().type != TOK_PARENTHESIS_OPEN) {
-        syntaxError("Expected '(' after function name", currentToken());
-        return NULL;
-    }
 
     ASTNode *func = malloc(sizeof(ASTNode));
     func->type = AST_FUNCTION_CALL;
     func->funcCall.name = strdup(functionCall.text);
 
-   parseFunctionArguments( func->funcCall.arguments );
+    printf("[parseFunctionCall][START] Current: %s \n", lexerTokenToString(currentToken().type));
+    parseFunctionArguments(&func->funcCall.arguments);
+    printf("[parseFunctionCall][PARSED] Current: %s \n", lexerTokenToString(currentToken().type));
 
-    if ( currentToken().type != TOK_SEMICOLON ) {
-        syntaxError("Expected ';' after function call", beforeToken() );
+    if (currentToken().type != TOK_SEMICOLON) {
+        syntaxError("Expected ';' after function call", beforeToken());
         return func;
     }
 
@@ -259,6 +276,8 @@ ASTNode *parseExpression(int deep) {
 
         node = compare;
     }
+
+    printf("[EXPRESSION][FINISHED] Current: %s \n", lexerTokenToString(currentToken().type));
 
     return node;
 }

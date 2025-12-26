@@ -68,6 +68,9 @@ char *astNodeTypeToString(ASTNodeType type) {
         case AST_VARIABLE_DEFINITION:
             return "AST_VARIABLE_DEFINITION";
 
+        case AST_FUNCTION_DEFINITION:
+            return "AST_FUNCTION_DEFINITION";
+
         case AST_TYPE_LITERAL:
             return "AST_TYPE_LITERAL";
         case AST_VARIABLE_CAST:
@@ -99,6 +102,9 @@ bool isEnd() {
 }
 
 Token currentToken() {
+    if ( isEnd() )
+        syntaxError("Expected more code here", beforeToken() );
+
     return getTokens()[current];
 }
 
@@ -256,6 +262,7 @@ ASTNodeType fromTokVariableTypeToASTNodeType(TokenType type) {
 
 ASTNode parseTypeLiteral() {
     Token type = currentToken();
+    printf("\n\n\n(1) - CURRENT TOKEN: %s\n", lexerTokenToString(currentToken().type));
 
 
     Token varName = currentToken();
@@ -277,23 +284,27 @@ ASTNode parseTypeLiteral() {
 
     nextPos();
 
+    printf("(2) - CURRENT TOKEN: %s\n\n\n", lexerTokenToString(currentToken().type));
+
     // Verify if is function definition
-    if ( currentToken().type == TOK_FUNCTION_DEFINITION ) {
+    if ( currentToken().type == TOK_FUNCTION_CALL ) {
         ASTNode node = (ASTNode){
             .type = AST_FUNCTION_DEFINITION,
             .funcDefinition = {
-                .body = NULL
+                .body = NULL,
+                .name = strdup(currentToken().text)
             }
         };
 
-        parseFunctionArguments( node.funcDefinition.arguments );
+        printf("\n\n\nIS TOK_FUNCTION_CALL\n\n\n");
+        parseFunctionArguments( &node.funcDefinition.arguments );
 
-        if ( currentToken().type != TOK_PARENTHESIS_OPEN ) {
+        if ( currentToken().type != TOK_BRACE_OPEN ) {
             syntaxError("Expected { after function definition", beforeToken() );
         }
 
         nextPos();
-
+        printf("(4) - CURRENT TOKEN: %s\n\n\n", lexerTokenToString(currentToken().type));
         parseBody( &node.funcDefinition.body );
 
         if (currentToken().type != TOK_BRACE_CLOSE) {

@@ -177,7 +177,7 @@ ASTNode parseTypeLiteral();
 
 ASTNode *parseExpression(int deep );
 
-void parseFunctionArguments( ASTFunctionArguments arguments  );
+void parseFunctionArguments( ASTFunctionArguments *arguments  );
 
 ASTNode *parseFunctionCall();
 

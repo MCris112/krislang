@@ -26,7 +26,6 @@ const char *lexerTokenToString(TokenType type) {
 
         // FUNCTIONS
         case TOK_FUNCTION_CALL: return "TOK_FUNCTION_CALL";
-        case TOK_FUNCTION_DEFINITION: return "TOK_FUNCTION_DEFINITION";
 
         // COMPARISON
         case TOK_LESS_THAN: return "TOK_LESS_THAN";
@@ -136,6 +135,8 @@ void parserPrintASTNode(ASTNode *node, int indent) {
             break;
         case AST_FUNCTION_CALL: printf(" (%s)", node->funcCall.name);
             break;
+        case AST_FUNCTION_DEFINITION: printf(" (%s)", node->funcDefinition.name);
+            break;
         case AST_VARIABLE_CAST: printf(" (%s)", node->text);
             break;
         default: break;
@@ -154,10 +155,28 @@ void parserPrintASTNode(ASTNode *node, int indent) {
         case AST_CONCAT: parserPrintASTNode(node->binary.left, indent + 1);
             parserPrintASTNode(node->binary.right, indent + 1);
             break;
-        case AST_FUNCTION_CALL: for (int i = 0; i < node->funcCall.arguments.count; i++) {
+        case AST_FUNCTION_CALL:
+            for (int i = 0; i < node->funcCall.arguments.count; i++) {
                 parserPrintASTNode(node->funcCall.arguments.children[i], indent + 1);
             }
             break;
+        case AST_FUNCTION_DEFINITION: {
+            // ARGUMENTS
+            for (int i = 0; i < indent + 1; i++) printf("  ");
+            printf("ARGUMENTS:\n");
+            for (int i = 0; i < node->funcDefinition.arguments.count; i++) {
+                parserPrintASTNode(node->funcDefinition.arguments.children[i], indent + 1);
+            }
+
+            // BODY
+            for (int i = 0; i < indent + 1; i++) printf("  ");
+            printf("BODY:\n");
+            for (int i = 0; i < node->funcDefinition.body.count; i++) {
+                parserPrintASTNode(node->funcDefinition.body.children[i], indent + 2);
+            }
+
+            break;
+        }
         case AST_LOGICAL_IF: {
             // CONDITION
             for (int i = 0; i < indent + 1; i++) printf("  ");

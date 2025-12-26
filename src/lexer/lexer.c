@@ -441,6 +441,18 @@ void parseLexer(const char *input) {
             continue;
         }
 
+        if ( strncmp(pos, "RETURN", 6) == 0 ) {
+            addToken((Token){
+                .type = TOK_RETURN,
+                .line = currentLine,
+                .column = startColumn
+            });
+
+            pos +=6;
+            currentColumn += 6;
+            continue;
+        }
+
         //---------------------------
         // Comparison operators
         //---------------------------

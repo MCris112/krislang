@@ -20,6 +20,7 @@ typedef enum {
 
     // FUNCTION
     TOK_FUNCTION_CALL,
+    TOK_RETURN,
 
     //---------------------------
     // Comparison operators

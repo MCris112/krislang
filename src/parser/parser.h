@@ -16,6 +16,7 @@ typedef enum {
     AST_FUNCTION_DEFINITION,
     AST_FUNCTION_PARAMETER,
     AST_LOGICAL_IF,
+    AST_RETURN,
 
     AST_TYPE_LITERAL,
     AST_TEXT,
@@ -68,6 +69,7 @@ typedef struct {
     int capacity;
 } ASTFunctionArguments;
 
+
 typedef struct ASTNode {
     ASTNodeType type;
 
@@ -80,6 +82,8 @@ typedef struct ASTNode {
         int number;
         double decimal;
         bool boolean;
+
+        struct ASTNode *child;
 
         struct {
             ASTNodeType type;

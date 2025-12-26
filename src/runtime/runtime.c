@@ -65,7 +65,7 @@ EnvValue *runFunctionCall(SymbolTable *table, ASTNode *node) {
         EnvValue *result = runExpression(table, node->funcCall.arguments.children[0]);
 
         printLiteral(result);
-        return envValueNull();
+        return NULL;
     }
 
     // ---------------------------
@@ -89,7 +89,7 @@ EnvValue *runFunctionCall(SymbolTable *table, ASTNode *node) {
 
         fflush(stdout);
         if (!fgets(buffer, sizeof(buffer), stdin)) {
-            syntaxError("Someting happended on input", beforeToken() );
+            syntaxError("Someting happended on input", beforeToken());
         }
         buffer[strcspn(buffer, "\n")] = '\0'; // remove newline
 
@@ -168,7 +168,7 @@ EnvValue *runFunctionCall(SymbolTable *table, ASTNode *node) {
                 "Function '%s' expects %d argment(s)",
                 node->funcCall.name,
                 definition->arguments->count
-                ),
+            ),
             beforeToken());
     }
 
@@ -199,10 +199,10 @@ EnvValue *runFunctionCall(SymbolTable *table, ASTNode *node) {
     }
 
 
-    runBody(funcTable, definition->body);
+    EnvValue *ret = runBody(funcTable, definition->body);
 
     freeSymbolTable(funcTable); // forget the table after function
-    return envValueNull();
+    return ret;
 }
 
 EnvValue *runExpression(SymbolTable *symbolTable, ASTNode *node) {
@@ -275,7 +275,7 @@ EnvValue *runExpression(SymbolTable *symbolTable, ASTNode *node) {
             return envValueString(buf);
         }
         case AST_SUBTRACT: {
-            EnvValue *left  = runExpression(symbolTable, node->binary.left);
+            EnvValue *left = runExpression(symbolTable, node->binary.left);
             EnvValue *right = runExpression(symbolTable, node->binary.right);
 
             if (!left || !right) {
@@ -294,12 +294,12 @@ EnvValue *runExpression(SymbolTable *symbolTable, ASTNode *node) {
 
             // INT - FLOAT
             if (left->type == ENV_INT && right->type == ENV_FLOAT) {
-                return envValueFloat((double)left->number - right->decimal);
+                return envValueFloat((double) left->number - right->decimal);
             }
 
             // FLOAT - INT
             if (left->type == ENV_FLOAT && right->type == ENV_INT) {
-                return envValueFloat(left->decimal - (double)right->number);
+                return envValueFloat(left->decimal - (double) right->number);
             }
 
             syntaxError("Unsupported types for subtraction", beforeToken());
@@ -427,32 +427,52 @@ bool runExpressionBoolean(SymbolTable *symbolTable, ASTNode *node) {
     }
 }
 
-
-void runBody(SymbolTable *varTable, ASTBlock *block) {
-    for (int i = 0; i < block->count; ++i) {
+EnvValue *runBody(SymbolTable *varTable, ASTBlock *block) {
+    for (int i = 0; i < block->count; i++) {
         ASTNode *child = block->children[i];
 
         switch (child->type) {
+
             case AST_VARIABLE_DEFINITION:
                 envDeclare(varTable, child);
                 break;
+
             case AST_FUNCTION_DEFINITION:
                 envDeclareFunction(varTable, child);
                 break;
-            case AST_FUNCTION_CALL:
-                runFunctionCall(varTable, child);
+
+            case AST_FUNCTION_CALL: {
+                EnvValue *v = runFunctionCall(varTable, child);
+                if (v != NULL) return v;
                 break;
-            case AST_LOGICAL_IF:
+            }
+
+            case AST_RETURN:
+                if (child->child == NULL)
+                    return envValueVoid();
+                return runExpression(varTable, child->child);
+
+            case AST_LOGICAL_IF: {
                 if (runExpressionBoolean(varTable, child->logicalIf.conditional)) {
-                    runBody(varTable, &child->logicalIf.bodyBlock);
-                } else if (child->logicalIf.elseBlock.count > 0) { runBody(varTable, &child->logicalIf.elseBlock); }
+                    EnvValue *v = runBody(varTable, &child->logicalIf.bodyBlock);
+                    if (v != NULL) return v;
+                } else if (child->logicalIf.elseBlock.count > 0) {
+                    EnvValue *v = runBody(varTable, &child->logicalIf.elseBlock);
+                    if (v != NULL) return v;
+                }
                 break;
+            }
+
             default:
-                fprintf(stderr, "Unknown AST node type (%s)\n", astNodeTypeToString(child->type));
+                fprintf(stderr, "Unknown AST node type (%s)\n",
+                        astNodeTypeToString(child->type));
                 break;
         }
     }
+
+    return NULL;
 }
+
 
 void runtime() {
     SymbolTable *variableTable;

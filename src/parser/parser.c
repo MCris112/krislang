@@ -80,12 +80,16 @@ char *astNodeTypeToString(ASTNodeType type) {
             return "AST_FUNCTION_PARAMETER";
         case AST_CONCAT:
             return "AST_CONCAT";
+        case AST_COMPARE:
+            return "AST_COMPARE";
         case AST_SUBTRACT:
             return "AST_SUBTRACT";
         case AST_FUNCTION_CALL:
             return "AST_FUNCTION_CALL";
         case AST_LOGICAL_IF:
             return "AST_LOGICAL_IF";
+        case AST_RETURN:
+            return "AST_RETURN";
         default:
             return "AST_UNKNOWN";
     }
@@ -363,6 +367,28 @@ void *parseBody(ASTBlock *parent) {
 
             addASTNode(parent, *func);
             printf("FINISHED PARSING TOK_FUNCTION_CALL \n");
+            continue;
+        }
+
+        if ( currentToken().type == TOK_RETURN ) {
+            nextPos(); // Skip TOK_RETURN
+
+            ASTNode node = (ASTNode){
+                .type = AST_RETURN,
+                .child =  NULL
+            };
+
+            if ( currentToken().type != TOK_SEMICOLON) {
+                node.child = parseExpression(0);
+
+                if ( currentToken().type != TOK_SEMICOLON) {
+                    syntaxError("Expected ';' after return", beforeToken());
+                }
+            }
+
+            nextPos(); // Skip ;
+
+            addASTNode( parent, node);
             continue;
         }
 

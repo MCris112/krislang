@@ -19,6 +19,7 @@ typedef enum {
     TOK_VARIABLE,
 
     // FUNCTION
+    TOK_IDENTIFIER,
     TOK_FUNCTION_CALL,
     TOK_RETURN,
 
@@ -90,7 +91,9 @@ typedef enum {
     TOK_LITERAL_BOOLEAN,
 
     TOK_WHITESPACE,
-    TOK_COMMENT_NORMAL // -> //
+    TOK_COMMENT_NORMAL, // -> //
+    TOK_EOF
+
 } TokenType;
 
 typedef struct {

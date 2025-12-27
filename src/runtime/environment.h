@@ -37,6 +37,7 @@ typedef struct {
         double decimal;
         bool boolean;
         char character;
+
     };
 } EnvValue;
 
@@ -81,10 +82,13 @@ EnvValue *envValueCharacter(char v);
 
 EnvValue *envValueNull(void);
 
-EnvValue *envValueVoid(void);
+EnvValue *envValueVoid(char *name);
 
 char* envValueToString(EnvValue *v);
 
+Environment *envFind(SymbolTable *table, EnvironmentType type, const char *name);
+
+bool envIsVariableSameAsType(VarType variable, EnvValueType env);
 
 void symbolTableAddChild(SymbolTable *symbolTable, Environment environment);
 
@@ -101,5 +105,7 @@ void envDeclare(SymbolTable *variableTable, ASTNode *node);
 void envDeclareFunction(SymbolTable *variableTable, ASTNode *node);
 
 void freeSymbolTable(SymbolTable *table);
+
+EnvValue envValueDeepCopy(EnvValue *src);
 
 #endif //KRISLANG_ENVIRONMENT_H

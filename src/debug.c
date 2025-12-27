@@ -13,6 +13,7 @@
 //------------------------------------
 const char *lexerTokenToString(TokenType type) {
     switch (type) {
+        case TOK_EOF: return "TOK_EOF";
         case TOK_ERROR: return "TOK_ERROR";
 
         // VARIABLES
@@ -26,6 +27,7 @@ const char *lexerTokenToString(TokenType type) {
 
         // FUNCTIONS
         case TOK_FUNCTION_CALL: return "TOK_FUNCTION_CALL";
+        case TOK_IDENTIFIER: return "TOK_IDENTIFIER";
 
         // COMPARISON
         case TOK_LESS_THAN: return "TOK_LESS_THAN";
@@ -137,6 +139,8 @@ void parserPrintASTNode(ASTNode *node, int indent) {
             break;
         case AST_FUNCTION_DEFINITION: printf(" (%s)", node->funcDefinition.name);
             break;
+        case AST_FUNCTION_REFERENCE: printf(" (%s)", node->text);
+            break;
         case AST_FUNCTION_PARAMETER: printf(" (%s %s)", parserVarTypeToString(node->varDecl.varType), node->varDecl.name );
             break;
         case AST_VARIABLE_CAST: printf(" (%s)", node->text);
@@ -153,6 +157,9 @@ void parserPrintASTNode(ASTNode *node, int indent) {
             }
             break;
         case AST_VARIABLE_DEFINITION: parserPrintASTNode(node->varDecl.value, indent + 1);
+            break;
+        case AST_RETURN:
+            parserPrintASTNode(node->child, indent + 1);
             break;
         case AST_CONCAT:
         case AST_SUBTRACT:
@@ -234,7 +241,9 @@ char *parserVarTypeToString(VarType type) {
         case VARIABLE_TYPE_CHAR:
             return "CHAR";
         case VARIABLE_TYPE_NEVER:
-            return "CHAR";
+            return "NEVER";
+        case VARIABLE_TYPE_VOID:
+            return "VOID";
         default: return "UNKNOWN";
     }
 }
@@ -290,6 +299,7 @@ void printSymbolTable(SymbolTable *variableTable) {
                 case VARIABLE_TYPE_FLOAT:   printf("FLOAT    "); break;
                 case VARIABLE_TYPE_BOOLEAN: printf("BOOLEAN  "); break;
                 case VARIABLE_TYPE_CHAR:    printf("CHAR     "); break;
+                case VARIABLE_TYPE_VOID:    printf("VOID     "); break;
                 default:                    printf("UNKNOWN  "); break;
             }
 
@@ -323,7 +333,7 @@ void printSymbolTable(SymbolTable *variableTable) {
                     break;
 
                 case ENV_VOID:
-                    printf("VOID");
+                    printf("VOID(%s)", sym->variable.value.text);
                     break;
 
                 case ENV_NULL:

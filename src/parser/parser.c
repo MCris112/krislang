@@ -14,7 +14,7 @@
 
 int syntax_error_count = 0;
 
-void syntaxError(const char *message, Token token) {
+_Noreturn void syntaxError(const char *message, Token token) {
     printf("LINE: %d - COLUMN: %d \n", token.line, token.column);
     const char *code = getCode();
     const char *lineStart = code;
@@ -71,7 +71,8 @@ char *astNodeTypeToString(ASTNodeType type) {
 
         case AST_FUNCTION_DEFINITION:
             return "AST_FUNCTION_DEFINITION";
-
+        case AST_FUNCTION_REFERENCE:
+            return "AST_FUNCTION_REFERENCE";
         case AST_TYPE_LITERAL:
             return "AST_TYPE_LITERAL";
         case AST_VARIABLE_CAST:
@@ -239,7 +240,7 @@ VarType parseTokToVarType() {
         case TOK_VARIABLE_TYPE_FLOAT : return VARIABLE_TYPE_FLOAT;
         case TOK_VARIABLE_TYPE_BOOLEAN: return VARIABLE_TYPE_BOOLEAN;
         case TOK_VARIABLE_TYPE_CHAR: return VARIABLE_TYPE_CHAR;
-        case TOK_VARIABLE_TYPE_VOID: return VARIABLE_TYPE_NEVER;
+        case TOK_VARIABLE_TYPE_VOID: return VARIABLE_TYPE_VOID;
         default:
             syntaxError("The variable type was not expected", beforeToken() );
             return VARIABLE_TYPE_UNKNOWN;
@@ -392,6 +393,21 @@ void *parseBody(ASTBlock *parent) {
             continue;
         }
 
+        if ( currentToken().type == TOK_VARIABLE) {
+            // Token variable = currentToken();
+            // nextPos(); // Skip tok variable
+            //
+            // if ( currentToken().type == TOK_PARENTHESIS_OPEN) {
+            //     ASTNode *arguments =
+            // }
+
+            addASTNode( parent, *parseFunctionCall() );
+            continue;
+        }
+
+        if ( currentToken().type == TOK_EOF) {
+            return NULL;
+        }
 
         nextPos();
     }
@@ -400,6 +416,16 @@ void *parseBody(ASTBlock *parent) {
 }
 
 ASTNode getAST() {
+    if (getTokensCount() == 1 && getTokens()[0].type == TOK_EOF) {
+        return (ASTNode){
+            .type = AST_PROGRAM,
+            .block.children = NULL,
+            .block.count = 0,
+            .block.capacity = 0
+        };
+    }
+
+
     ASTNode *parent = malloc(sizeof(ASTNode));
     parent->type = AST_PROGRAM;
     parent->block.children = NULL;

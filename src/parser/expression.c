@@ -217,6 +217,10 @@ ASTNode *parseExpression(int deep) {
     bool needToSkip = true;
 
     switch (token.type) {
+        case TOK_IDENTIFIER:
+            node->type = AST_FUNCTION_REFERENCE,
+            node->text = strdup(token.text);
+            break;
         case TOK_VARIABLE_TYPE_INT:
         case TOK_VARIABLE_TYPE_STRING:
         case TOK_VARIABLE_TYPE_BOOLEAN:

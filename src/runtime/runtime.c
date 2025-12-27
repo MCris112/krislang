@@ -54,46 +54,58 @@ void printLiteral(EnvValue *value) {
  * @return
  */
 EnvValue *runFunctionCall(SymbolTable *table, ASTNode *node) {
+    printSymbolTable( table );
+
+    char *name = node->funcCall.name;
+    int argCount = node->funcCall.arguments.count;
+    ASTNode **arguments = node->funcCall.arguments.children;
+
+    // Check if is calling a variable as a function
+    if ( strncmp(name, "$", 1) == 0) {
+        printf("INSIDE VARIABLE CALLING \n");
+        EnvValue *variable = envGetVariableValue(table, name);
+
+        if ( variable->type != ENV_VOID ) {
+            syntaxError(strFormat("Only variables VOID can be called on variable '%s'", name), beforeToken() );
+        }
+
+        printf("VARIABLE VALUE %s \n", variable->text);
+        name = variable->text;
+    }
     // ---------------------------
     // Built-in: print
     // ---------------------------
-    if (strcmp(node->funcCall.name, "print") == 0) {
-        if (node->funcCall.arguments.count < 1) {
+    if (strcmp(name, "print") == 0) {
+        if (argCount < 1)
             syntaxError("print() expects at least 1 argument", beforeToken());
-        }
 
-        EnvValue *result = runExpression(table, node->funcCall.arguments.children[0]);
-
-        printLiteral(result);
-        return NULL;
+        printLiteral(runExpression(table, node->funcCall.arguments.children[0]));
+        return NULL; // print never returns a value
     }
 
     // ---------------------------
     // Built-in: input
     // ---------------------------
-    if (strcmp(node->funcCall.name, "input") == 0) {
-        EnvValue *result = NULL;
-
-        if (node->funcCall.arguments.count > 0) {
-            result = runExpression(table, node->funcCall.arguments.children[0]);
+    if (strcmp(name, "input") == 0) {
+        // Optional prompt
+        if (argCount > 0) {
+            EnvValue *message = runExpression(table, node->funcCall.arguments.children[0]);
+            if (message) printLiteral(message); // If dev set some text on it, show a print
         }
         // First args to show if it has shown on console
 
 
         // TODO check correct buffer
         char buffer[256];
-
-        // If dev set some text on it, show a print
-        if (result != NULL)
-            printLiteral(result);
-
         fflush(stdout);
+
         if (!fgets(buffer, sizeof(buffer), stdin)) {
             syntaxError("Someting happended on input", beforeToken());
         }
+
         buffer[strcspn(buffer, "\n")] = '\0'; // remove newline
 
-        if (node->funcCall.arguments.count > 1) {
+        if (argCount > 1) {
             EnvValue *argType = runExpression(table, node->funcCall.arguments.children[1]);
 
             // TODO fix the error on console, this is not syntaxis error is input error or something like it
@@ -118,6 +130,7 @@ EnvValue *runFunctionCall(SymbolTable *table, ASTNode *node) {
                     return envValueFloat(value);
                 }
                 case ENV_BOOL:
+                    // 1. Direct boolean strings
                     if (strcmp(buffer, "1") == 0)
                         return envValueBoolean(true);
 
@@ -130,7 +143,20 @@ EnvValue *runFunctionCall(SymbolTable *table, ASTNode *node) {
                     if (strcmp(buffer, "false") == 0)
                         return envValueBoolean(false);
 
-                    // fallback: any non-empty, non-space string is true
+                    // if is negative is false
+                    char *end;
+                    errno = 0;
+                    long num = strtol(buffer, &end, 10);
+
+                    if (end != buffer && *end == '\0' && errno == 0) {
+                        // It's a valid integer
+                        if (num < 0) return envValueBoolean(false); // negative → false
+                        if (num > 0) return envValueBoolean(true); // positive → true
+
+                        return envValueBoolean(false); // zero → false
+                    }
+
+                    // 3. Fallback: any non-empty string is true
                     if (buffer[0] != '\0' && buffer[0] != ' ')
                         return envValueBoolean(true);
 
@@ -152,38 +178,47 @@ EnvValue *runFunctionCall(SymbolTable *table, ASTNode *node) {
                 default: return envValueString(buffer);
             }
         }
+
         return envValueString(buffer);
     }
 
     // ---------------------------
     // User-defined function
     // ---------------------------
-    EnvFunctionDefinition *definition = envGetFunction(table, node->funcCall.name);
+    EnvFunctionDefinition *definition = envGetFunction(table, name);
 
-    SymbolTable *funcTable = symbolTableFromParent(table);
-
-    if (definition->arguments->count > node->funcCall.arguments.count) {
+    int expected = definition->arguments->count;
+    if (expected > argCount) {
         syntaxError(
             strFormat(
                 "Function '%s' expects %d argment(s)",
-                node->funcCall.name,
-                definition->arguments->count
+                name,
+                expected
             ),
             beforeToken());
     }
 
-    if (definition->arguments->count < node->funcCall.arguments.count) {
+    if (expected < argCount) {
         syntaxError(strFormat("You're giving %d argment(s) more than need Function '%s' ",
-                              node->funcCall.arguments.count - definition->arguments->count, node->funcCall.name),
+                              argCount - expected, name),
                     beforeToken());
     }
 
-    for (int i = 0; i < definition->arguments->count; i++) {
+    // Create function symbol table
+    SymbolTable *funcTable = symbolTableFromParent(table);
+
+    // Bind parameters
+    for (int i = 0; i < expected; i++) {
         ASTNode *param = definition->arguments->children[i]; // AST_FUNCTION_PARAMETER
         ASTNode *argExpr = node->funcCall.arguments.children[i]; // expression
 
         // Evaluate argument expression
         EnvValue *value = runExpression(table, argExpr);
+
+        if (!envIsVariableSameAsType(param->varDecl.varType, value->type)) {
+            syntaxError(strFormat("Argument type mismatch for parameter '%s' in function '%s'", param->varDecl.name,
+                                  name), beforeToken());
+        }
 
         // Create a variable in the function scope
         Environment env = {
@@ -191,15 +226,15 @@ EnvValue *runFunctionCall(SymbolTable *table, ASTNode *node) {
             .name = strdup(param->varDecl.name),
             .variable = {
                 .type = param->varDecl.varType,
-                .value = *value
+                .value = envValueDeepCopy(value) // Safe to shallow‑copy, in nested functions
             }
         };
 
         symbolTableAddChild(funcTable, env);
     }
 
-
-    EnvValue *ret = runBody(funcTable, definition->body);
+    // Execute function body
+    EnvValue *ret = runBody(funcTable, definition->body, true);
 
     freeSymbolTable(funcTable); // forget the table after function
     return ret;
@@ -217,7 +252,14 @@ EnvValue *runExpression(SymbolTable *symbolTable, ASTNode *node) {
         case AST_NUMBER: return envValueInt(node->number);
         case AST_NUMBER_DECIMAL: return envValueFloat(node->decimal);
         case AST_BOOLEAN: return envValueBoolean(node->boolean);
+        case AST_FUNCTION_REFERENCE:
+            Environment *value = envFind( symbolTable, ENV_TYPE_FUNCTION, node->text );
 
+            if ( value == NULL ) {
+                syntaxError(strFormat("The function '%s' is not definied", node->text), beforeToken() );
+            }
+
+            return envValueVoid(node->text);
         // ============================
         // VARIABLES
         // ============================
@@ -402,7 +444,7 @@ EnvValue *runExpression(SymbolTable *symbolTable, ASTNode *node) {
                 case AST_BOOLEAN: return envValueBoolean(false);
                 case AST_CHAR: return envValueCharacter(0);
                 case AST_NULL: return envValueNull();
-                case AST_VOID: return envValueVoid();
+                case AST_VOID: return envValueVoid("");
                 case AST_UNKNOWN: syntaxError("Unknown Expression", currentToken());
                 default: return envValueString("");
             }
@@ -427,12 +469,11 @@ bool runExpressionBoolean(SymbolTable *symbolTable, ASTNode *node) {
     }
 }
 
-EnvValue *runBody(SymbolTable *varTable, ASTBlock *block) {
+EnvValue *runBody(SymbolTable *varTable, ASTBlock *block, bool insideFunction) {
     for (int i = 0; i < block->count; i++) {
         ASTNode *child = block->children[i];
 
         switch (child->type) {
-
             case AST_VARIABLE_DEFINITION:
                 envDeclare(varTable, child);
                 break;
@@ -443,22 +484,26 @@ EnvValue *runBody(SymbolTable *varTable, ASTBlock *block) {
 
             case AST_FUNCTION_CALL: {
                 EnvValue *v = runFunctionCall(varTable, child);
-                if (v != NULL) return v;
+                if (insideFunction && v != NULL) return v;
                 break;
             }
 
             case AST_RETURN:
-                if (child->child == NULL)
-                    return envValueVoid();
-                return runExpression(varTable, child->child);
+                if (insideFunction) {
+                    if (child->child == NULL) return NULL;
+                    return runExpression(varTable, child->child);
+                }
 
+                // Top-level RETURN should NOT stop the program
+                // Just ignore it
+                return NULL;
             case AST_LOGICAL_IF: {
                 if (runExpressionBoolean(varTable, child->logicalIf.conditional)) {
-                    EnvValue *v = runBody(varTable, &child->logicalIf.bodyBlock);
-                    if (v != NULL) return v;
+                    EnvValue *v = runBody(varTable, &child->logicalIf.bodyBlock, insideFunction);
+                    if (insideFunction && v != NULL) return v;
                 } else if (child->logicalIf.elseBlock.count > 0) {
-                    EnvValue *v = runBody(varTable, &child->logicalIf.elseBlock);
-                    if (v != NULL) return v;
+                    EnvValue *v = runBody(varTable, &child->logicalIf.elseBlock, insideFunction);
+                    if (insideFunction && v != NULL) return v;
                 }
                 break;
             }
@@ -480,11 +525,12 @@ void runtime() {
     initSymbolTable(&variableTable);
     ASTNode root = getAST();
 
-    // parserPrintAST(&root);
+
+    parserPrintAST(&root);
 
     printf("\n\n\n\n\n");
 
-    runBody(variableTable, &root.block);
+    runBody(variableTable, &root.block, false);
 
     printSymbolTable(variableTable);
 }

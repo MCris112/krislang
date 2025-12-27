@@ -608,9 +608,34 @@ void parseLexer(const char *input) {
             continue;
         }
 
+        if ( isalpha(*pos) || *pos == '_' ) {
+            const char *start = pos;
+
+            while (isalnum(*pos) || *pos == '_')
+                pos++;
+
+            size_t length = pos - start;
+            char *text = malloc(length + 1);
+            if (!text) {
+                perror("malloc");
+                exit(EXIT_FAILURE);
+            }
+
+            memcpy(text, start, length);
+            text[length] = '\0';
+
+            addToken( (Token){
+                .type = TOK_IDENTIFIER,
+                .text = strdup(text),
+            } );
+            continue;
+        }
+
         pos++;
         currentColumn++;
     }
+
+    addToken((Token){ .type = TOK_EOF, .text = NULL });
 
     lexerPrintTokens(tokens, tokenCount);
 }

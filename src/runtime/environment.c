@@ -54,9 +54,10 @@ EnvValue *envValueNull() {
     return val;
 }
 
-EnvValue *envValueVoid() {
+EnvValue *envValueVoid(char *name) {
     EnvValue *val = malloc(sizeof(EnvValue));
     val->type = ENV_VOID;
+    val->text = name;
     return val;
 }
 
@@ -150,6 +151,32 @@ void symbolTableAddChild(SymbolTable *symbolTable, Environment environment) {
     symbolTable->symbols[symbolTable->count++] = environment;
 }
 
+bool envIsVariableSameAsType(VarType variable, EnvValueType env) {
+    switch (variable) {
+        case VARIABLE_TYPE_STRING:
+            return env == ENV_STRING;
+
+        case VARIABLE_TYPE_INT:
+            return env == ENV_INT;
+
+        case VARIABLE_TYPE_FLOAT:
+            return env == ENV_FLOAT;
+
+        case VARIABLE_TYPE_BOOLEAN:
+            return env == ENV_BOOL;
+
+        case VARIABLE_TYPE_CHAR:
+            return env == ENV_CHAR;
+
+        case VARIABLE_TYPE_VOID:
+            return  env == ENV_VOID;
+
+        default:
+            return false;
+    }
+}
+
+
 void envDeclare(SymbolTable *variableTable, ASTNode *node) {
     if (envFind(variableTable, ENV_TYPE_VARIABLE, node->varDecl.name)) {
         syntaxError("Variable already defined", getTokens()[0]);
@@ -183,7 +210,6 @@ void envDeclare(SymbolTable *variableTable, ASTNode *node) {
             else value.decimal = valueNode->decimal;
             break;
         case VARIABLE_TYPE_BOOLEAN:
-            printf("\n\n\n======= IN BOOLEAN ======\n\n\n");
             if (valueNode->type != ENV_BOOL)
                 abort = true;
             else value.boolean = valueNode->boolean;
@@ -193,11 +219,17 @@ void envDeclare(SymbolTable *variableTable, ASTNode *node) {
                 abort = true;
             else value.character = valueNode->character;
             break;
+        case VARIABLE_TYPE_VOID:
+            if (valueNode->type != ENV_VOID)
+                abort = true;
+            else value.text = strdup(valueNode->text);
+            break;
         default:
             abort = true;
             break;
     }
 
+    printf("HAS BEEN DECLARED '%s'! %s\n",  node->varDecl.name ,parserVarTypeToString(type) );
     if (abort) {
         fprintf(
             stderr,
@@ -226,6 +258,11 @@ void envDeclare(SymbolTable *variableTable, ASTNode *node) {
 void envDeclareFunction(SymbolTable *symbolTable, ASTNode *node) {
     if (node->type != AST_FUNCTION_DEFINITION) {
         syntaxError("EXPECTED FUNCTION DEFINITION", currentToken());
+    }
+
+    if (envFind(symbolTable, ENV_TYPE_FUNCTION, node->funcDefinition.name)) {
+        syntaxError(strFormat("Function '%s' already defined", node->funcDefinition.name), getTokens()[0]);
+        return;
     }
 
     Environment environment = (Environment){
@@ -294,4 +331,19 @@ void freeSymbolTable(SymbolTable *table) {
 
     // Free the table itself
     free(table);
+}
+
+/**
+ * Function to Safe to shallow‑copy, when is nested
+ * @param src
+ * @return
+ */
+EnvValue envValueDeepCopy(EnvValue *src) {
+    EnvValue out = *src;
+
+    if (src->type == ENV_STRING && src->text) {
+        out.text = strdup(src->text);
+    }
+
+    return out;
 }

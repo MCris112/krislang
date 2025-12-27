@@ -6,6 +6,7 @@
 
 
 int main(int argc, char *argv[]) {
+
     FILE *input = stdin;
 
     if (argc > 1) {
@@ -17,7 +18,7 @@ int main(int argc, char *argv[]) {
     }
 
     // Read file into buffer
-    char *buffer = NULL;
+    char *buffer = malloc(1);
     size_t size = 0;
     size_t capacity = 0;
 
@@ -41,8 +42,6 @@ int main(int argc, char *argv[]) {
     }
 
     // Now you have the full source code
-
-
     parseLexer(buffer);
 
     runtime();

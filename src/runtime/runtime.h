@@ -18,7 +18,7 @@ bool runExpressionBoolean( SymbolTable *symbolTable, ASTNode *node );
 
 void runFunctionDefinition( SymbolTable *variableTable, ASTNode *node);
 
-EnvValue *runBody(SymbolTable *varTable, ASTBlock *block);
+EnvValue *runBody(SymbolTable *varTable, ASTBlock *block, bool insideFunction);
 
 void runtime(void);
 

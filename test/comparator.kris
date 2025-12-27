@@ -1,0 +1,111 @@
+print("===== COMPARATOR TEST START =====");
+
+/* == */
+print("-- EQUAL (==) --");
+print(1 == 1);
+print(1 == 2);            // FAIL
+print("A" == "A");
+print("A" == "B");        // FAIL
+print(TRUE == TRUE);
+print(TRUE == FALSE);     // FAIL
+
+/* != */
+print("-- NOT EQUAL (!=) --");
+print(1 != 1);            // FAIL
+print(1 != 2);
+print("A" != "A");        // FAIL
+print("A" != "B");
+print(TRUE != TRUE);      // FAIL
+print(TRUE != FALSE);
+
+/* < */
+print("-- LESS THAN (<) --");
+print(1 < 2);
+print(2 < 1);             // FAIL
+print(1.5 < 2.5);
+print('A' < 'Z');
+print("apple" < "banana");
+
+/* <= */
+print("-- LESS OR EQUAL (<=) --");
+print(1 <= 1);
+print(1 <= 2);
+print(2 <= 1);            // FAIL
+print('A' <= 'A');
+print('A' <= 'Z');
+
+/* > */
+print("-- GREATER THAN (>) --");
+print(2 > 1);
+print(1 > 2);             // FAIL
+print(2.5 > 1.5);
+print('Z' > 'A');
+print("banana" > "apple");
+
+/* >= */
+print("-- GREATER OR EQUAL (>=) --");
+print(2 >= 2);
+print(2 >= 1);
+print(1 >= 2);            // FAIL
+print('Z' >= 'Z');
+print('Z' >= 'A');
+
+/* MIXED NUMERIC */
+print("-- MIXED NUMERIC --");
+print(1 < 2.5);
+print(2.5 > 1);
+print(2 <= 2.0);
+print(3.0 >= 3);
+
+/* NEGATIVE CASES */
+print("-- NEGATIVE VALUES --");
+print(-1 < 0);
+print(-1 <= -1);
+print(-1 > -2);
+print(-1 >= 0);           // FAIL
+
+print("===== COMPARATOR TEST END =====");
+
+print("===== PARENTHESIS TEST START =====");
+
+/* BASIC GROUPING */
+print("-- BASIC GROUPING --");
+print((1 < 2));
+print((2 < 1));            // FAIL
+print((1 + 2) == 3);
+print((1 + 2) == 4);       // FAIL
+
+/* UNARY WITH PARENTHESIS */
+print("-- UNARY + PARENTHESIS --");
+print(-(1) < 0);
+print(-(1) <= -1);
+print(-(1) > 0);           // FAIL
+print(-(1) >= 0);          // FAIL
+
+/* GROUPED COMPARISONS */
+print("-- GROUPED COMPARISONS --");
+print((-1 < 0));
+print((-1 <= -1));
+print((-1 > -2));
+print((-1 >= 0));          // FAIL
+
+/* NESTED PARENTHESIS */
+print("-- NESTED PARENTHESIS --");
+print(((-1)) < 0);
+print(((-1)) == -1);
+print(((-1)) > 0);         // FAIL
+
+/* PARENTHESIS CHANGE MEANING */
+print("-- PARENTHESIS CHANGE MEANING --");
+//print(-(1 < 0));           // FAIL  (-(FALSE) → invalid / FALSE)
+//print(-(1 > 0));           // FAIL
+print((-1) < 0);
+print(-((1)));             // TRUE
+
+/* COMPLEX EXPRESSIONS */
+print("-- COMPLEX EXPRESSIONS --");
+print( ( (-1 + 2) + 3) );
+print(((-1 + 2) + 3) );
+print(((-1 + 2) + (3 - 5)) );
+
+print("===== PARENTHESIS TEST END =====");

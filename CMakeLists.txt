@@ -20,4 +20,5 @@ add_executable(KrisLang main.c
         src/helpers/helper.c
         src/helpers/helper.h
         src/runtime/run_function.c
+        src/runtime/run_compare.c
 )

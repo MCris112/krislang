@@ -20,6 +20,8 @@ void runFunctionDefinition( SymbolTable *variableTable, ASTNode *node);
 
 EnvValue *runBody(SymbolTable *varTable, ASTBlock *block, bool insideFunction);
 
+EnvValue *runCompare( SymbolTable *symbolTable , ASTCompare node );
+
 void runtime(void);
 
 #endif //KRISLANG_RUNTIME_H

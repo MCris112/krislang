@@ -275,7 +275,7 @@ EnvValue *runExpression(SymbolTable *symbolTable, ASTNode *node) {
                     case ENV_INT: return envValueInt(-value->number);
                     case ENV_FLOAT: return envValueFloat(-value->decimal);
                     // TODO SUPPORT ( ... )
-                    default: syntaxError("Unary '-' can only be applied to numbers", currentToken());
+                    default: syntaxError(strFormat("Unary '-' can only be applied to numbers: current: %s", parseEnvValueTypeToString(value->type)), currentToken());
                         return envValueNull();
                 }
             }
@@ -354,87 +354,7 @@ EnvValue *runExpression(SymbolTable *symbolTable, ASTNode *node) {
         // COMPARE (==)
         // ============================
         case AST_COMPARE:
-            EnvValue *left = runExpression(symbolTable, node->binary.left);
-            EnvValue *right = runExpression(symbolTable, node->binary.right);
-
-            bool boolean = false;
-            switch (left->type) {
-                // -----------------------------
-                // STRING == STRING
-                // -----------------------------
-                case ENV_STRING:
-                    if (right->type == ENV_STRING) {
-                        boolean = strcmp(left->text, right->text) == 0;
-                        break;
-                    }
-                    syntaxError(strFormat("Cant compare STRING with %s", parseEnvValueTypeToString(right->type)),
-                                currentToken());
-                    break;
-
-                // -----------------------------
-                // INT == INT or INT == FLOAT
-                // -----------------------------
-                case ENV_INT: if (right->type == ENV_INT) {
-                        boolean = left->number == right->number;
-                        break;
-                    }
-                    if (right->type == ENV_FLOAT) {
-                        boolean = (double) left->number == right->decimal;
-                        break;
-                    }
-                    syntaxError(strFormat("Cant compare INT with %s", parseEnvValueTypeToString(right->type)),
-                                currentToken());
-                    break;
-
-                // -----------------------------
-                // FLOAT == FLOAT or FLOAT == INT
-                // -----------------------------
-                case ENV_FLOAT:
-                    if (right->type == ENV_FLOAT) {
-                        boolean = left->decimal == right->decimal;
-                        break;
-                    }
-                    if (right->type == ENV_INT) {
-                        boolean = left->decimal == (double) right->number;
-                        break;
-                    }
-                    syntaxError(strFormat("Cant compare FLOAT with %s", parseEnvValueTypeToString(right->type)),
-                                currentToken());
-                    break;
-                // -----------------------------
-                //  BOOL == BOOL
-                // -----------------------------
-                case ENV_BOOL: if (right->type == ENV_BOOL) {
-                        boolean = left->boolean == right->boolean;
-                        break;
-                    }
-                    syntaxError(strFormat("Cant compare BOOLEAN with %s", parseEnvValueTypeToString(right->type)),
-                                currentToken());
-                    break;
-
-                // -----------------------------
-                // CHAR == CHAR
-                // -----------------------------
-                case ENV_CHAR: if (right->type == ENV_CHAR) {
-                        boolean = left->character == right->character;
-                        break;
-                    }
-                    syntaxError(strFormat("Cant compare CHAR with %s", parseEnvValueTypeToString(right->type)),
-                                currentToken());
-                    break;
-
-                // -----------------------------
-                // NULL comparisons (optional)
-                // -----------------------------
-                case ENV_NULL:
-                    boolean = (right->type == ENV_NULL);
-                    break;
-                default:
-                    syntaxError("Unsupported comparison type", currentToken());
-                    break;
-            }
-
-            return envValueBoolean(boolean);
+            return runCompare( symbolTable, node->compare );
         case AST_TYPE_LITERAL:
             switch (node->literal.type) {
                 // TODO more literals

@@ -1,84 +1,59 @@
-print("===== START TEST =====");
+// 🧮 Basic Calculator Program
 
-/* BOOLEAN */
-BOOLEAN $flag = TRUE;
-
-print($flag);
-$flag = FALSE;
-
-print($flag);
-
-
-/* INT */
-INT $counter = 0;
-print($counter);
-$counter = 5;
-print($counter);
-
-
-/* FLOAT */
-FLOAT $pi = 3.14;
-print($pi);
-$pi = 2.71;
-print($pi);
-
-/* CHAR */
-CHAR $letter = 'A';
-print($letter);
-$letter = 'Z';
-print($letter);
-
-/* STRING */
-STRING $text = "Hello";
-print($text);
-$text = "World";
-print($text);
-
-
-/* WHILE + INPUT + ASSIGNMENT */
-BOOLEAN $running = TRUE;
-
-WHILE ($running) {
-    print("---- LOOP START ----");
-
-    INT $num = input("Insert number (0 to stop)", INT);
-
-    IF ($num == 0) {
-        $running = FALSE;
-    }
-
-    print("You entered:");
-    print($num);
-
-    /* SHADOWING TEST */
-    INT $shadow = 100;
-    print($shadow);
-
-    print("---- LOOP END ----");
+VOID sum(INT $a, INT $b) {
+    RETURN $a + $b;
 }
 
-
-/* VERIFY OUTER VARIABLES STILL VALID */
-print("AFTER LOOP");
-print($running);
-print($counter);
-print($text);
-
-/* NESTED WHILE */
-INT $i = 0;
-
-WHILE ($i < 3) {
-    INT $j = 0;
-
-    WHILE ($j < 2) {
-        print("Nested:");
-        print($i);
-        print($j);
-        $j = $j + 1;
-    }
-
-    $i = $i + 1;
+VOID subtract(INT $a, INT $b) {
+    RETURN $a - $b;
 }
 
+VOID main() {
+    INT $option = -1;
 
-print("===== END TEST =====");
+    WHILE ($option != 0) {
+        print("===== CALCULATOR =====");
+        print("0 - Exit");
+        print("1 - Sum");
+        print("2 - Subtraction");
+
+        $option = input("", INT);
+
+        IF ($option == 1) {
+            print("Enter first number:");
+            INT $a = input("", INT);
+
+            print("Enter second number:");
+            INT $b = input("", INT);
+
+            INT $result = sum($a, $b);
+            print("Result:");
+            print($result);
+        }
+
+        IF ($option == 2) {
+            print("Enter first number:");
+            INT $a = input("", INT);
+
+            print("Enter second number:");
+            INT $b = input("", INT);
+
+            INT $result = subtract($a, $b);
+            print("Result:");
+            print($result);
+        }
+
+        IF ($option == 0) {
+            print("Exiting calculator...");
+        }
+        ELSE {
+            IF ($option != 1) {
+                IF ($option != 2) {
+                    print("Invalid option");
+                }
+            }
+        }
+    }
+}
+
+main();

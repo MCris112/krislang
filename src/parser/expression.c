@@ -157,6 +157,7 @@ void parseFunctionArguments(ASTFunctionArguments *arguments) {
         if (currentToken().type == TOK_COMMA) {
             nextPos(); // skip comma
         } else if (currentToken().type != TOK_PARENTHESIS_CLOSE) {
+            printf("CURRENT: %s\n", lexerTokenToString(currentToken().type));
             syntaxError("Expected ',' or ')'", currentToken());
         }
     }
@@ -185,40 +186,46 @@ ASTNode *parseFunctionCall() {
     return func;
 }
 
+ASTNode *parseCompare(ASTNode *left, int deep) {
+    switch (currentToken().type) {
+        case TOK_EQUAL_EQUAL:
+        case TOK_LESS_THAN:
+        case TOK_LESS_EQUAL:
+        case TOK_GREATER_THAN:
+        case TOK_GREATER_EQUAL:
+        case TOK_NOT_EQUAL:
+            {
+            Token op = currentToken();
+            nextPos();
 
-ASTNode *parseExpression(int deep) {
-    if (isEnd()) {
-        ASTNode *err = malloc(sizeof(ASTNode));
-        err->type = AST_ERROR;
-        return err;
+            ASTNode *right = parseExpression(deep);
+
+            ASTNode *compare = malloc(sizeof(ASTNode));
+            compare->type = AST_COMPARE;
+            compare->compare.operator = op.type;
+            compare->compare.left = left;
+            compare->compare.right = right;
+
+            return compare;
+        }
+        default:
+            return left;
     }
+}
 
+// ============================
+// PRIMARY EXPRESSIONS
+// ============================
+ASTNode *parsePrimary(int deep) {
     Token token = currentToken();
-
-    // ============================
-    // UNARY (PREFIX) — HIGHEST PRECEDENCE
-    // ============================
-
-    if (token.type == TOK_MINUS) {
-        ASTNode *unary = malloc(sizeof(ASTNode));
-        unary->type = AST_UNARY;
-        unary->unary.operator = TOK_MINUS;
-        nextPos(); // consume '-'
-        unary->unary.operand = parseExpression(deep + 1);
-        return unary; // IMPORTANT: stop here
-    }
-
-    // ============================
-    // PRIMARY EXPRESSIONS
-    // ============================
-
     ASTNode *node = malloc(sizeof(ASTNode));
+
     // Some cases the function already do nextPos() so i better decide what need to avoid skipping
     bool needToSkip = true;
 
     switch (token.type) {
         case TOK_IDENTIFIER:
-            node->type = AST_FUNCTION_REFERENCE,
+            node->type = AST_FUNCTION_REFERENCE;
             node->text = strdup(token.text);
             break;
         case TOK_VARIABLE_TYPE_INT:
@@ -234,23 +241,26 @@ ASTNode *parseExpression(int deep) {
             break;
         case TOK_TEXT:
             node->type = AST_TEXT;
-            node->text = strdup(currentToken().text);
+            node->text = strdup(token.text);
             break;
         case TOK_CHAR:
             node->type = AST_CHAR;
-            node->character = currentToken().text[0];
+            node->character = token.text[0];
             break;
+
         case TOK_NUMBER:
             node->type = AST_NUMBER;
-            node->number = currentToken().number;
+            node->number = token.number;
             break;
+
         case TOK_NUMBER_DECIMAL:
             node->type = AST_NUMBER_DECIMAL;
-            node->decimal = currentToken().decimal;
+            node->decimal = token.decimal;
             break;
+
         case TOK_LITERAL_BOOLEAN:
             node->type = AST_BOOLEAN;
-            node->boolean = currentToken().boolean;
+            node->boolean = token.boolean;
             break;
         case TOK_VARIABLE:
             node->type = AST_VARIABLE_CAST;
@@ -258,20 +268,55 @@ ASTNode *parseExpression(int deep) {
             break;
         case TOK_FUNCTION_CALL:
             node = parseFunctionCall();
-
-            // Avoid debug, cuz in parseFunctionCall() already skip one that is the parentesis, so
-            // The program can skip again or will skip the TOK_SEMICOLON
             needToSkip = false;
             break;
+        case TOK_PARENTHESIS_OPEN:
+            nextPos(); // consume '('
+            node = parseExpression(deep + 1);
+            if (currentToken().type != TOK_PARENTHESIS_CLOSE) {
+                syntaxError("Expected ')'", currentToken());
+                node->type = AST_ERROR;
+                return node;
+            }
+            break;
+
         default:
-            syntaxError(strFormat("Expected expression, - Current: %s", lexerTokenToString(token.type)), token);
-            ASTNode *err = malloc(sizeof(ASTNode));
-            err->type = AST_ERROR;
-            return err;
+            syntaxError("Expected primary expression", token);
+            node->type = AST_ERROR;
+            return node;
     }
 
     if (needToSkip)
         nextPos();
+
+    return node;
+}
+
+
+ASTNode *parseExpression(int deep) {
+    if (isEnd()) {
+        ASTNode *err = malloc(sizeof(ASTNode));
+        err->type = AST_ERROR;
+        return err;
+    }
+
+    ASTNode *node = NULL;
+    Token token = currentToken();
+
+    // ============================
+    // UNARY (PREFIX) — HIGHEST PRECEDENCE
+    // ============================
+
+    if (token.type == TOK_MINUS) {
+        node = malloc(sizeof(ASTNode));
+        node->type = AST_UNARY;
+        node->unary.operator = TOK_MINUS;
+        nextPos(); // consume '-'
+        node->unary.operand = parsePrimary(deep + 1);
+    }else {
+        node = parsePrimary(deep + 1);
+    }
+
 
     // ============================
     // BINARY OPERATORS (LEFT‑ASSOCIATIVE)
@@ -309,19 +354,6 @@ ASTNode *parseExpression(int deep) {
         node = sub;
     }
 
-
-    // COMPARE (==)
-    if (currentToken().type == TOK_EQUAL_EQUAL) {
-        nextPos(); // consume '=='
-
-        ASTNode *right = parseExpression(deep);
-
-        ASTNode *compare = malloc(sizeof(ASTNode));
-        compare->type = AST_COMPARE;
-        compare->binary.left = node;
-        compare->binary.right = right;
-
-        node = compare;
-    }
+    node = parseCompare(node, deep);
     return node;
 }

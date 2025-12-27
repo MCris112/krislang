@@ -85,6 +85,13 @@ typedef struct {
     ASTBlock body;
 } ASTLoopWhile;
 
+typedef struct {
+    TokenType operator;      // TOK_LESS_THAN, TOK_EQUAL_EQUAL, etc.
+    struct ASTNode *left;
+    struct ASTNode *right;
+} ASTCompare;
+
+
 typedef struct ASTNode {
     ASTNodeType type;
 
@@ -112,6 +119,8 @@ typedef struct ASTNode {
             struct ASTNode *left;
             struct ASTNode *right;
         } binary;
+
+        ASTCompare compare;
 
         /* -------------------------
         * Unary declaration

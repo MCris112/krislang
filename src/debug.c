@@ -106,7 +106,6 @@ void lexerPrintTokens(const Token *tokens, int count) {
 
     printf("====================\n");
 }
-
 //------------------------------------
 //
 // AST PRETTY PRINTER
@@ -124,6 +123,7 @@ static void printNodeHeader(ASTNode *node, int indent) {
     printf("%s", astNodeTypeToString(node->type));
 
     switch (node->type) {
+
         case AST_TEXT:
             printf(" \"%s\"", node->text);
             break;
@@ -132,8 +132,16 @@ static void printNodeHeader(ASTNode *node, int indent) {
             printf(" %d", node->number);
             break;
 
+        case AST_NUMBER_DECIMAL:
+            printf(" %f", node->decimal);
+            break;
+
         case AST_BOOLEAN:
             printf(" %s", node->boolean ? "TRUE" : "FALSE");
+            break;
+
+        case AST_CHAR:
+            printf(" '%c'", node->character);
             break;
 
         case AST_VARIABLE_DEFINITION:
@@ -178,6 +186,14 @@ static void printNodeHeader(ASTNode *node, int indent) {
             printf(" [body=%d]", node->loopWhile.body.count);
             break;
 
+        case AST_COMPARE:
+            printf(" (%s)", lexerTokenToString(node->compare.operator));
+            break;
+
+        case AST_UNARY:
+            printf(" (%s)", lexerTokenToString(node->unary.operator));
+            break;
+
         default:
             break;
     }
@@ -217,9 +233,17 @@ void parserPrintASTNode(ASTNode *node, int indent) {
 
         case AST_CONCAT:
         case AST_SUBTRACT:
-        case AST_COMPARE:
             parserPrintASTNode(node->binary.left, indent + 1);
             parserPrintASTNode(node->binary.right, indent + 1);
+            break;
+
+        case AST_COMPARE:
+            parserPrintASTNode(node->compare.left, indent + 1);
+            parserPrintASTNode(node->compare.right, indent + 1);
+            break;
+
+        case AST_UNARY:
+            parserPrintASTNode(node->unary.operand, indent + 1);
             break;
 
         case AST_FUNCTION_CALL:

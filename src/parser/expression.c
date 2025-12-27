@@ -278,7 +278,6 @@ ASTNode *parseExpression(int deep) {
     // ===========================
 
     if (currentToken().type == TOK_SEMICOLON) {
-        printf("[EXPRESSION SKYKING ON : %s ]\n", lexerTokenToString(currentToken().type));
         return node;
     }
 
@@ -324,8 +323,5 @@ ASTNode *parseExpression(int deep) {
 
         node = compare;
     }
-
-    printf("[EXPRESSION][FINISHED] Current: %s \n", lexerTokenToString(currentToken().type));
-
     return node;
 }

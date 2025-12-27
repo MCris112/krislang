@@ -102,6 +102,8 @@ EnvFunctionDefinition *envGetFunction(SymbolTable *variableTable, char *name);
 
 void envDeclare(SymbolTable *variableTable, ASTNode *node);
 
+EnvValue *envVariableAssignment(SymbolTable *table, ASTNode *node);
+
 void envDeclareFunction(SymbolTable *variableTable, ASTNode *node);
 
 void freeSymbolTable(SymbolTable *table);

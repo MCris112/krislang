@@ -2,19 +2,15 @@ print("===== START TEST =====");
 
 /* BOOLEAN */
 BOOLEAN $flag = TRUE;
-
 print($flag);
 $flag = FALSE;
-
 print($flag);
-
 
 /* INT */
 INT $counter = 0;
 print($counter);
 $counter = 5;
 print($counter);
-
 
 /* FLOAT */
 FLOAT $pi = 3.14;
@@ -34,16 +30,15 @@ print($text);
 $text = "World";
 print($text);
 
-
 /* WHILE + INPUT + ASSIGNMENT */
 BOOLEAN $running = TRUE;
 
-WHILE ($running) {
+while ($running) {
     print("---- LOOP START ----");
 
-    INT $num = input("Insert number (0 to stop)", INT);
+    INT $num = input("Insert number (0 to stop)");
 
-    IF ($num == 0) {
+    if ($num == 0) {
         $running = FALSE;
     }
 
@@ -57,7 +52,6 @@ WHILE ($running) {
     print("---- LOOP END ----");
 }
 
-
 /* VERIFY OUTER VARIABLES STILL VALID */
 print("AFTER LOOP");
 print($running);
@@ -67,10 +61,10 @@ print($text);
 /* NESTED WHILE */
 INT $i = 0;
 
-WHILE ($i < 3) {
+while ($i < 3) {
     INT $j = 0;
 
-    WHILE ($j < 2) {
+    while ($j < 2) {
         print("Nested:");
         print($i);
         print($j);
@@ -80,5 +74,9 @@ WHILE ($i < 3) {
     $i = $i + 1;
 }
 
+/* FINAL ASSIGNMENT CHECK */
+INT $final = 10;
+$final = $final + 5;
+print($final);
 
 print("===== END TEST =====");

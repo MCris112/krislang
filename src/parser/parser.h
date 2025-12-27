@@ -18,6 +18,7 @@ typedef enum {
     AST_FUNCTION_REFERENCE,
     AST_LOGICAL_IF,
     AST_RETURN,
+    AST_LOOP_WHILE,
 
     AST_TYPE_LITERAL,
     AST_TEXT,
@@ -37,6 +38,7 @@ typedef enum {
 
     AST_VARIABLE_DEFINITION, // Define a new var $varname = "something"
     AST_VARIABLE_CAST, // call a var like: echo $varname;
+    AST_VARIABLE_ASSIGNMENT,
 
     AST_EOF // DECLARE END;
 } ASTNodeType;
@@ -73,6 +75,15 @@ typedef struct {
     int capacity;
 } ASTFunctionArguments;
 
+typedef struct {
+    char *name;        // "$variable"
+    struct ASTNode *value;    // expression on the right side
+} ASTVariableAssignment;
+
+typedef struct {
+    struct ASTNode *condition;
+    ASTBlock body;
+} ASTLoopWhile;
 
 typedef struct ASTNode {
     ASTNodeType type;
@@ -108,6 +119,7 @@ typedef struct ASTNode {
         * ------------------------- */
         ASTUnary unary;
 
+        ASTLoopWhile loopWhile;
         /* -------------------------
          * Variable declaration
          * ------------------------- */
@@ -117,6 +129,11 @@ typedef struct ASTNode {
             struct ASTNode *value;
             int size; /* // -1 means autosize */
         } varDecl;
+
+        /* -------------------------
+         * Variable Assignment
+         * ------------------------- */
+        ASTVariableAssignment variableAssignment;
 
         /* -------------------------
          * Block of statements

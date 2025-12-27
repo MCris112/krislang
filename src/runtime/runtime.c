@@ -23,7 +23,7 @@ void printLiteral(EnvValue *value) {
             break;
 
         case ENV_CHAR:
-            printf("%c", value->text ? value->text[0] : '?');
+            printf("%c", value->character);
             break;
 
         case ENV_INT:
@@ -54,8 +54,6 @@ void printLiteral(EnvValue *value) {
  * @return
  */
 EnvValue *runFunctionCall(SymbolTable *table, ASTNode *node) {
-    printSymbolTable( table );
-
     char *name = node->funcCall.name;
     int argCount = node->funcCall.arguments.count;
     ASTNode **arguments = node->funcCall.arguments.children;
@@ -168,6 +166,7 @@ EnvValue *runFunctionCall(SymbolTable *table, ASTNode *node) {
                     // more than one character is not allowed
                     if (buffer[1] != '\0')
                         syntaxError("Expected a character", beforeToken());
+
                     return envValueCharacter(buffer[0]);
                 case ENV_NULL:
                     syntaxError("Expected a non-null argument", beforeToken());
@@ -478,6 +477,9 @@ EnvValue *runBody(SymbolTable *varTable, ASTBlock *block, bool insideFunction) {
                 envDeclare(varTable, child);
                 break;
 
+            case AST_VARIABLE_ASSIGNMENT:
+                envVariableAssignment(varTable, child);
+                break;
             case AST_FUNCTION_DEFINITION:
                 envDeclareFunction(varTable, child);
                 break;
@@ -508,6 +510,17 @@ EnvValue *runBody(SymbolTable *varTable, ASTBlock *block, bool insideFunction) {
                 break;
             }
 
+            case AST_LOOP_WHILE:
+                while ( runExpressionBoolean( varTable, child->loopWhile.condition )) {
+                    SymbolTable *loopScope = symbolTableFromParent(varTable);
+
+                    EnvValue *v = runBody(loopScope, &child->loopWhile.body, insideFunction);
+
+                    freeSymbolTable(loopScope);
+                    if (insideFunction && v != NULL)
+                        return v;
+                }
+                break;
             default:
                 fprintf(stderr, "Unknown AST node type (%s)\n",
                         astNodeTypeToString(child->type));
@@ -524,9 +537,6 @@ void runtime() {
 
     initSymbolTable(&variableTable);
     ASTNode root = getAST();
-
-
-    parserPrintAST(&root);
 
     printf("\n\n\n\n\n");
 

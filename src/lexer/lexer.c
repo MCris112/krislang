@@ -203,6 +203,37 @@ void parseLexer(const char *input) {
             continue;
         }
 
+        // Block comment /* ... */
+        if (strncmp(pos, "/*", 2) == 0) {
+            int startLine = currentLine;
+            int startColumn = currentColumn;
+
+            pos += 2; // skip /*
+            currentColumn += 2;
+            bool closed = false;
+
+            while (*pos) {
+                if (*pos == '*' && *(pos + 1) == '/') {
+                    pos += 2;
+                    currentColumn += 2;
+                    closed = true;
+                    break;
+                }
+                if (*pos == '\n') {
+                    currentLine++;
+                    currentColumn = 1;
+                } else { currentColumn++; }
+                pos++;
+            }
+
+            if (!closed) {
+                fprintf(stderr, "error: unterminated block comment at line %d, column %d\n", startLine, startColumn);
+                exit(EXIT_FAILURE);
+            }
+
+            continue;
+        }
+
         //---------------------------
         // Parse String
         //---------------------------
@@ -441,18 +472,29 @@ void parseLexer(const char *input) {
             continue;
         }
 
-        if ( strncmp(pos, "RETURN", 6) == 0 ) {
+        if (strncmp(pos, "RETURN", 6) == 0) {
             addToken((Token){
                 .type = TOK_RETURN,
                 .line = currentLine,
                 .column = startColumn
             });
 
-            pos +=6;
+            pos += 6;
             currentColumn += 6;
             continue;
         }
 
+        if (strncmp(pos, "WHILE", 5) == 0) {
+            addToken((Token){
+                .type = TOK_LOOP_WHILE,
+                .line = currentLine,
+                .column = startColumn
+            });
+
+            pos += 5;
+            currentColumn += 5;
+            continue;
+        }
         //---------------------------
         // Comparison operators
         //---------------------------
@@ -608,7 +650,7 @@ void parseLexer(const char *input) {
             continue;
         }
 
-        if ( isalpha(*pos) || *pos == '_' ) {
+        if (isalpha(*pos) || *pos == '_') {
             const char *start = pos;
 
             while (isalnum(*pos) || *pos == '_')
@@ -624,10 +666,10 @@ void parseLexer(const char *input) {
             memcpy(text, start, length);
             text[length] = '\0';
 
-            addToken( (Token){
+            addToken((Token){
                 .type = TOK_IDENTIFIER,
                 .text = strdup(text),
-            } );
+            });
             continue;
         }
 
@@ -635,7 +677,7 @@ void parseLexer(const char *input) {
         currentColumn++;
     }
 
-    addToken((Token){ .type = TOK_EOF, .text = NULL });
+    addToken((Token){.type = TOK_EOF, .text = NULL});
 
     lexerPrintTokens(tokens, tokenCount);
 }

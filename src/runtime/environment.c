@@ -93,7 +93,7 @@ Environment *envFind(SymbolTable *table, EnvironmentType type, const char *name)
         }
     }
 
-    if ( table->parent != NULL ) {
+    if (table->parent != NULL) {
         return envFind(table->parent, type, name);
     }
 
@@ -151,6 +151,9 @@ void symbolTableAddChild(SymbolTable *symbolTable, Environment environment) {
     symbolTable->symbols[symbolTable->count++] = environment;
 }
 
+void symbolTableModifyChild(SymbolTable *symbolTable) {
+}
+
 bool envIsVariableSameAsType(VarType variable, EnvValueType env) {
     switch (variable) {
         case VARIABLE_TYPE_STRING:
@@ -169,7 +172,7 @@ bool envIsVariableSameAsType(VarType variable, EnvValueType env) {
             return env == ENV_CHAR;
 
         case VARIABLE_TYPE_VOID:
-            return  env == ENV_VOID;
+            return env == ENV_VOID;
 
         default:
             return false;
@@ -229,7 +232,6 @@ void envDeclare(SymbolTable *variableTable, ASTNode *node) {
             break;
     }
 
-    printf("HAS BEEN DECLARED '%s'! %s\n",  node->varDecl.name ,parserVarTypeToString(type) );
     if (abort) {
         fprintf(
             stderr,
@@ -253,6 +255,73 @@ void envDeclare(SymbolTable *variableTable, ASTNode *node) {
     };
 
     symbolTableAddChild(variableTable, symbol);
+}
+
+EnvValue *envVariableAssignment(SymbolTable *table, ASTNode *node) {
+    if (node->type != AST_VARIABLE_ASSIGNMENT) {
+        syntaxError("COMPILER! - Wrong node to assign", getTokens()[0]);
+    }
+
+    Environment *variable = envFind(table, ENV_TYPE_VARIABLE, node->variableAssignment.name);
+
+    if (variable == NULL) {
+        syntaxError("Variable is not defined", getTokens()[0]);
+    }
+
+    EnvValue *valueNode = runExpression(table, node->variableAssignment.value);
+    bool abort = false;
+
+    switch (variable->variable.type) {
+        case VARIABLE_TYPE_STRING:
+            if (valueNode->type != ENV_STRING) abort = true;
+            else {
+                free(variable->variable.value.text);
+                variable->variable.value.text = strdup(valueNode->text);
+            }
+            break;
+        case VARIABLE_TYPE_INT:
+            if (valueNode->type != ENV_INT)
+                abort = true;
+            else variable->variable.value.number = valueNode->number;
+            break;
+        case VARIABLE_TYPE_FLOAT:
+            if (valueNode->type != ENV_FLOAT)
+                abort = true;
+            else variable->variable.value.decimal = valueNode->decimal;
+            break;
+        case VARIABLE_TYPE_BOOLEAN:
+            if (valueNode->type != ENV_BOOL)
+                abort = true;
+            else variable->variable.value.boolean = valueNode->boolean;
+            break;
+        case VARIABLE_TYPE_CHAR:
+            if (valueNode->type != ENV_CHAR)
+                abort = true;
+            else variable->variable.value.character = valueNode->character;
+            break;
+        case VARIABLE_TYPE_VOID:
+            if (valueNode->type != ENV_VOID)
+                abort = true;
+            else variable->variable.value.text = strdup(valueNode->text);
+            break;
+        default:
+            abort = true;
+            break;
+    }
+
+    if (abort) {
+        fprintf(
+            stderr,
+            "error: type mismatch in variable assignment\n  %s > expected: %s\n  received: %s",
+            node->variableAssignment.name,
+            parserVarTypeToString(variable->variable.type),
+            parseEnvValueTypeToString(valueNode->type)
+        );
+        exit(EXIT_FAILURE);
+    }
+
+
+    return &variable->variable.value;
 }
 
 void envDeclareFunction(SymbolTable *symbolTable, ASTNode *node) {

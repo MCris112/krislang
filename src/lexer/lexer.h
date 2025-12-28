@@ -90,6 +90,7 @@ typedef enum {
     TOK_LITERAL_BOOLEAN,
 
     TOK_LOOP_WHILE,
+    TOK_LOOP_FOR,
 
     TOK_WHITESPACE,
     TOK_COMMENT_NORMAL, // -> //

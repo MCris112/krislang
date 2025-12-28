@@ -19,6 +19,7 @@ typedef enum {
     AST_LOGICAL_IF,
     AST_RETURN,
     AST_LOOP_WHILE,
+    AST_LOOP_FOR,
 
     AST_TYPE_LITERAL,
     AST_TEXT,
@@ -88,12 +89,28 @@ typedef struct {
     ASTBlock body;
 } ASTLoopWhile;
 
+
+
 typedef struct {
     TokenType operator;      // TOK_LESS_THAN, TOK_EQUAL_EQUAL, etc.
     struct ASTNode *left;
     struct ASTNode *right;
 } ASTCompare;
 
+typedef struct {
+    VarType varType;
+    char *name;
+    struct ASTNode *value;
+    int size; /* // -1 means autosize */
+} ASTNodeVariableDeclaration;
+
+typedef struct {
+    ASTNodeVariableDeclaration variable;
+    struct ASTNode *condition;
+    struct ASTNode *increment;
+
+    ASTBlock body;
+} ASTLoopFor;
 
 typedef struct ASTNode {
     ASTNodeType type;
@@ -132,15 +149,12 @@ typedef struct ASTNode {
         ASTUnary unary;
 
         ASTLoopWhile loopWhile;
+
+        ASTLoopFor loopFor;
         /* -------------------------
          * Variable declaration
          * ------------------------- */
-        struct {
-            VarType varType;
-            char *name;
-            struct ASTNode *value;
-            int size; /* // -1 means autosize */
-        } varDecl;
+        ASTNodeVariableDeclaration varDecl;
 
         /* -------------------------
          * Variable Assignment

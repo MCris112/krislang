@@ -65,6 +65,7 @@ char *astNodeTypeToString(ASTNodeType type) {
         case AST_LOGICAL_IF: return "AST_LOGICAL_IF";
         case AST_RETURN: return "AST_RETURN";
         case AST_LOOP_WHILE: return "AST_LOOP_WHILE";
+        case AST_LOOP_FOR: return "AST_LOOP_FOR";
 
         case AST_TYPE_LITERAL: return "AST_TYPE_LITERAL";
         case AST_TEXT: return "AST_TEXT";
@@ -412,9 +413,8 @@ void *parseBody(ASTBlock *parent) {
             continue;
         }
 
-
-        if (currentToken().type == TOK_LOOP_WHILE) {
-            nextPos();
+        if ( currentToken().type == TOK_LOOP_WHILE ) {
+            nextPos(); // skip for
 
             evalExpectedToken(currentToken(), TOK_PARENTHESIS_OPEN, "Expected ( to start using while");
             nextPos();
@@ -439,6 +439,62 @@ void *parseBody(ASTBlock *parent) {
                     node.loopWhile.body.capacity = 0;
 
             parseBody(&node.loopWhile.body);
+
+            evalExpectedToken(currentToken(), TOK_BRACE_CLOSE, "Expected } at end");
+
+            addASTNode(parent, node);
+        }
+
+        if (currentToken().type == TOK_LOOP_FOR) {
+            nextPos();
+
+            evalExpectedToken(currentToken(), TOK_PARENTHESIS_OPEN, "Expected ( to start using while");
+            nextPos();
+
+            ASTNode param = parseTypeLiteral();
+
+            ASTNode *condition = parseExpression(0);
+
+            evalExpectedToken(currentToken(), TOK_SEMICOLON, "Expected ; after FOR condition");
+            nextPos();
+
+            Token variable = currentToken();
+            evalExpectedToken(currentToken(), TOK_VARIABLE, "Expected variable to update");
+            nextPos();
+
+            evalExpectedToken(currentToken(), TOK_EQUALS, "Expected = in FOR");
+            nextPos();
+
+            ASTNode *increment = malloc(sizeof(ASTNode));
+            increment->type = AST_VARIABLE_ASSIGNMENT;
+            increment->variableAssignment = (ASTVariableAssignment){
+                .name = variable.text,
+                .value = parseExpression(0)
+            };
+
+            evalExpectedToken(currentToken(), TOK_PARENTHESIS_CLOSE, "Expected ) after FOR");
+            nextPos();
+
+            evalExpectedToken(currentToken(), TOK_BRACE_OPEN, "Expected { to start using body");
+            nextPos();
+
+            ASTNode node = (ASTNode){
+                .type = AST_LOOP_FOR,
+                .loopFor = {
+                    .variable = param.varDecl,
+                    .condition = condition,
+                    .increment = NULL,
+                    .body = malloc(sizeof(ASTBlock))
+                },
+            };
+
+            node.loopFor.increment = increment;
+
+            node.loopFor.body.children = NULL;
+            node.loopFor.body.count = 0,
+            node.loopFor.body.capacity = 0;
+
+            parseBody(&node.loopFor.body);
 
             evalExpectedToken(currentToken(), TOK_BRACE_CLOSE, "Expected } at end");
 
@@ -472,7 +528,7 @@ ASTNode getAST() {
 
     parseBody(&parent->block);
 
-    // parserPrintAST(parent);
+    parserPrintAST(parent);
 
     if (syntax_error_count > 0) {
         fprintf(stderr,

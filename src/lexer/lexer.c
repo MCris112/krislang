@@ -448,6 +448,18 @@ void parseLexer(const char *input) {
             currentColumn += 5;
             continue;
         }
+
+        if (strncmp(pos, "FOR", 3) == 0) {
+            addToken((Token){
+                .type = TOK_LOOP_FOR,
+                .line = currentLine,
+                .column = startColumn
+            });
+
+            pos += 3;
+            currentColumn += 3;
+            continue;
+        }
         //---------------------------
         // Comparison operators
         //---------------------------

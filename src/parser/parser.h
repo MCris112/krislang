@@ -31,10 +31,13 @@ typedef enum {
     AST_UNKNOWN,
     AST_ERROR,
 
+    AST_UNARY, // Negative values
+    AST_COMPARE, // Compare things, ==, <, >, !=, <=, >=
     AST_CONCAT, // CONCAT CERTAIN VALUES
-    AST_SUBTRACT,
-    AST_COMPARE,
-    AST_UNARY,
+    AST_SUBTRACT, // -
+    AST_MULTIPLY, // *
+    AST_DIVIDE, // /
+    AST_MODULO, // %
 
     AST_VARIABLE_DEFINITION, // Define a new var $varname = "something"
     AST_VARIABLE_CAST, // call a var like: echo $varname;
@@ -182,7 +185,7 @@ typedef struct ASTNode {
 } ASTNode;
 
 
-void syntaxError( const char *message, Token token );
+_Noreturn void syntaxError( const char *message, Token token );
 
 int getASTPosition();
 
@@ -194,9 +197,11 @@ bool isVariableDefinition();
 
 VarType parseTokToVarType();
 
+Token beforeToken();
+
 Token currentToken();
 
-Token beforeToken();
+Token nextToken();
 
 ASTNode getAST();
 

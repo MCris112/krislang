@@ -355,6 +355,91 @@ EnvValue *runExpression(SymbolTable *symbolTable, ASTNode *node) {
         // ============================
         case AST_COMPARE:
             return runCompare( symbolTable, node->compare );
+        case AST_MULTIPLY:
+            EnvValue *left = runExpression(symbolTable, node->binary.left);
+            EnvValue *right = runExpression(symbolTable, node->binary.right);
+
+            if (!left || !right) {
+                syntaxError("No valid to multiply", beforeToken() );
+            }
+
+            // INT × INT → INT
+            if ( left->type == ENV_INT && right->type == ENV_INT)
+                return envValueInt(left->number * right->number);
+
+            // FLOAT × FLOAT → FLOAT
+            if ( left->type == ENV_FLOAT && right->type == ENV_FLOAT)
+                return envValueFloat(left->decimal * right->decimal);
+
+
+            // INT × FLOAT → FLOAT
+            if ( left->type == ENV_INT && right->type == ENV_FLOAT)
+                return envValueFloat((double) left->number * right->decimal);
+
+
+            // FLOAT × INT → FLOAT
+            if ( left->type == ENV_FLOAT && right->type == ENV_INT)
+                return envValueFloat( left->decimal * (double) right->number);
+
+
+            syntaxError( "No valid operators to multiply", beforeToken() );
+            break;
+        case AST_DIVIDE: {
+            EnvValue *left = runExpression(symbolTable, node->binary.left);
+            EnvValue *right = runExpression(symbolTable, node->binary.right);
+
+            if (!left || !right) {
+                syntaxError("No valid operands to divide", beforeToken());
+            }
+
+            // Division by zero check
+            if ((right->type == ENV_INT && right->number == 0) ||
+                (right->type == ENV_FLOAT && right->decimal == 0.0)) {
+                syntaxError("Division by zero", beforeToken());
+                }
+
+            // INT / INT → FLOAT or INT?
+            if ( left->type == ENV_INT && right->type == ENV_INT)
+                return envValueFloat((double)left->number / (double)right->number);
+
+            // FLOAT / FLOAT
+            if (left->type == ENV_FLOAT && right->type == ENV_FLOAT)
+                return envValueFloat(left->decimal / right->decimal);
+
+            // INT / FLOAT
+            if (left->type == ENV_INT && right->type == ENV_FLOAT)
+                return envValueFloat((double)left->number / right->decimal);
+
+            // FLOAT / INT
+            if (left->type == ENV_FLOAT && right->type == ENV_INT)
+                return envValueFloat(left->decimal / (double)right->number);
+
+            syntaxError("Invalid types for division", beforeToken());
+            break;
+        }
+        case AST_MODULO: {
+            EnvValue *left = runExpression(symbolTable, node->binary.left);
+            EnvValue *right = runExpression(symbolTable, node->binary.right);
+
+            if (!left || !right) {
+                syntaxError("No valid operands for modulo", beforeToken());
+            }
+
+            // Only INT % INT is allowed
+            if (left->type == ENV_INT && right->type == ENV_INT) {
+
+                // Division by zero check
+                if (right->number == 0) {
+                    syntaxError("Modulo by zero", beforeToken());
+                }
+
+                return envValueInt(left->number % right->number);
+            }
+
+            syntaxError("Modulo operator requires INT % INT", beforeToken());
+            break;
+        }
+
         case AST_TYPE_LITERAL:
             switch (node->literal.type) {
                 // TODO more literals

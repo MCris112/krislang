@@ -26,7 +26,6 @@ const char *lexerTokenToString(TokenType type) {
         case TOK_VARIABLE: return "TOK_VARIABLE";
 
         // FUNCTIONS
-        case TOK_FUNCTION_CALL: return "TOK_FUNCTION_CALL";
         case TOK_IDENTIFIER: return "TOK_IDENTIFIER";
         case TOK_LOOP_WHILE: return "TOK_LOOP_WHILE";
 
@@ -233,6 +232,9 @@ void parserPrintASTNode(ASTNode *node, int indent) {
 
         case AST_CONCAT:
         case AST_SUBTRACT:
+        case AST_MULTIPLY:
+        case AST_DIVIDE:
+        case AST_MODULO:
             parserPrintASTNode(node->binary.left, indent + 1);
             parserPrintASTNode(node->binary.right, indent + 1);
             break;

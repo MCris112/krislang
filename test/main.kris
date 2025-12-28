@@ -1,59 +1,41 @@
-// 🧮 Basic Calculator Program
-
-VOID sum(INT $a, INT $b) {
-    RETURN $a + $b;
-}
-
-VOID subtract(INT $a, INT $b) {
-    RETURN $a - $b;
-}
-
 VOID main() {
-    INT $option = -1;
 
-    WHILE ($option != 0) {
-        print("===== CALCULATOR =====");
-        print("0 - Exit");
-        print("1 - Sum");
-        print("2 - Subtraction");
+    INT $a = 10;
+    INT $b = 3;
 
-        $option = input("", INT);
+    print("=== Basic KrisLang Calculator ===");
 
-        IF ($option == 1) {
-            print("Enter first number:");
-            INT $a = input("", INT);
+    print("a = ");
+    print($a);
 
-            print("Enter second number:");
-            INT $b = input("", INT);
+    print("b = ");
+    print($b);
 
-            INT $result = sum($a, $b);
-            print("Result:");
-            print($result);
-        }
+    print("a + b = ");
+    print($a + $b);
 
-        IF ($option == 2) {
-            print("Enter first number:");
-            INT $a = input("", INT);
+    print("a - b = ");
+    print($a - $b);
 
-            print("Enter second number:");
-            INT $b = input("", INT);
+    print("a * b = ");
+    print($a * $b);
 
-            INT $result = subtract($a, $b);
-            print("Result:");
-            print($result);
-        }
+    print("a / b = ");
+    print($a / $b);   // returns FLOAT because of promotion
 
-        IF ($option == 0) {
-            print("Exiting calculator...");
-        }
-        ELSE {
-            IF ($option != 1) {
-                IF ($option != 2) {
-                    print("Invalid option");
-                }
-            }
-        }
-    }
+    print("a % b = ");
+    print($a % $b);   // INT-only modulo
+
+    // More complex expressions
+    print("a * (b + 2) = ");
+    print($a * ( $b + 2 ));
+
+    print("a + b * 2 = ");
+    print($a + $b * 2);
+
+    print("a * b % 2 = ");
+    print($a * $b % 2);
+
 }
 
 main();

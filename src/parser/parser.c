@@ -80,6 +80,9 @@ char *astNodeTypeToString(ASTNodeType type) {
         case AST_SUBTRACT:              return "AST_SUBTRACT";
         case AST_COMPARE:               return "AST_COMPARE";
         case AST_UNARY:                 return "AST_UNARY";
+        case AST_MULTIPLY:             return "AST_MULTIPLY";
+        case AST_DIVIDE:             return "AST_DIVIDE";
+        case AST_MODULO:             return "AST_MODULO";
 
         case AST_VARIABLE_DEFINITION:   return "AST_VARIABLE_DEFINITION";
         case AST_VARIABLE_CAST:         return "AST_VARIABLE_CAST";
@@ -278,7 +281,8 @@ ASTNode parseTypeLiteral() {
     printf("(2) - CURRENT TOKEN: %s\n\n\n", lexerTokenToString(currentToken().type));
 
     // Verify if is function definition
-    if ( currentToken().type == TOK_FUNCTION_CALL ) {
+    // VOID|TYPE functionName() ...
+    if ( currentToken().type == TOK_IDENTIFIER ) {
         return parseFunctionDefinition();
     }
 
@@ -356,7 +360,7 @@ void *parseBody(ASTBlock *parent) {
             continue;
         }
 
-        if (currentToken().type == TOK_FUNCTION_CALL) {
+        if (currentToken().type == TOK_IDENTIFIER) {
             ASTNode *func = parseFunctionCall();
 
             if (currentToken().type != TOK_SEMICOLON) {

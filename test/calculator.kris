@@ -1,0 +1,59 @@
+// 🧮 Basic Calculator Program
+
+VOID sum(INT $a, INT $b) {
+    RETURN $a + $b;
+}
+
+VOID subtract(INT $a, INT $b) {
+    RETURN $a - $b;
+}
+
+VOID main() {
+    INT $option = -1;
+
+    WHILE ($option != 0) {
+        print("===== CALCULATOR =====");
+        print("0 - Exit");
+        print("1 - Sum");
+        print("2 - Subtraction");
+
+        $option = input("", INT);
+
+        IF ($option == 1) {
+            print("Enter first number:");
+            INT $a = input("", INT);
+
+            print("Enter second number:");
+            INT $b = input("", INT);
+
+            INT $result = sum($a, $b);
+            print("Result:");
+            print($result);
+        }
+
+        IF ($option == 2) {
+            print("Enter first number:");
+            INT $a = input("", INT);
+
+            print("Enter second number:");
+            INT $b = input("", INT);
+
+            INT $result = subtract($a, $b);
+            print("Result:");
+            print($result);
+        }
+
+        IF ($option == 0) {
+            print("Exiting calculator...");
+        }
+        ELSE {
+            IF ($option != 1) {
+                IF ($option != 2) {
+                    print("Invalid option");
+                }
+            }
+        }
+    }
+}
+
+main();

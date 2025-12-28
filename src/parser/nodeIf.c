@@ -61,9 +61,16 @@ void parseNodeIf(ASTBlock *parent) {
 
     nextPos(); // Skipp }
 
+    printf("Current: %s, Line: %d\n", lexerTokenToString(currentToken().type), currentToken().line);
     if (currentToken().type == TOK_LOGICAL_ELSE) {
         nextPos();
+        printf("[INSIDE] - Current: %s, Line: %d\n", lexerTokenToString(currentToken().type), currentToken().line);
 
+        if ( currentToken().type == TOK_LOGICAL_IF ) {
+            parseNodeIf( &nodeIf->logicalIf.elseBlock );
+            addASTNode(parent, *nodeIf);
+            return;
+        }
         if (currentToken().type != TOK_BRACE_OPEN) {
             syntaxError("Expected '{' after expression", currentToken());
             return;
@@ -71,6 +78,7 @@ void parseNodeIf(ASTBlock *parent) {
 
         nextPos(); // Skipp {
 
+        printf("[INSIDE][BEFORE ELSE] - Current: %s, Line: %d\n", lexerTokenToString(currentToken().type), currentToken().line);
         parseBody(&nodeIf->logicalIf.elseBlock);
         // parseBody( &blockElse );
 
@@ -80,6 +88,7 @@ void parseNodeIf(ASTBlock *parent) {
         }
 
         nextPos(); // Skipp }
+
     }
 
     addASTNode(parent, *nodeIf);

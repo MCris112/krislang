@@ -225,8 +225,13 @@ ASTNode *parsePrimary(int deep) {
 
     switch (token.type) {
         case TOK_IDENTIFIER:
-            node->type = AST_FUNCTION_REFERENCE;
-            node->text = strdup(token.text);
+            if ( nextToken().type == TOK_PARENTHESIS_OPEN ) {
+                node = parseFunctionCall();
+                needToSkip = false;
+            }else {
+                node->type = AST_FUNCTION_REFERENCE;
+                node->text = strdup(token.text);
+            }
             break;
         case TOK_VARIABLE_TYPE_INT:
         case TOK_VARIABLE_TYPE_STRING:
@@ -266,10 +271,7 @@ ASTNode *parsePrimary(int deep) {
             node->type = AST_VARIABLE_CAST;
             node->text = strdup(currentToken().text);
             break;
-        case TOK_FUNCTION_CALL:
-            node = parseFunctionCall();
-            needToSkip = false;
-            break;
+
         case TOK_PARENTHESIS_OPEN:
             nextPos(); // consume '('
             node = parseExpression(deep + 1);
@@ -348,6 +350,45 @@ ASTNode *parseExpression(int deep) {
 
         ASTNode *sub = malloc(sizeof(ASTNode));
         sub->type = AST_SUBTRACT;
+        sub->binary.left = node;
+        sub->binary.right = right;
+
+        node = sub;
+    }
+
+    // Multiply
+    if ( currentToken().type == TOK_MULTIPLY ) {
+        nextPos();
+
+        ASTNode *right = parseExpression(deep);
+        ASTNode *sub = malloc(sizeof(ASTNode));
+        sub->type = AST_MULTIPLY;
+        sub->binary.left = node;
+        sub->binary.right = right;
+
+        node = sub;
+    }
+
+    // Division
+    if ( currentToken().type == TOK_DIVIDE ) {
+        nextPos();
+
+        ASTNode *right = parseExpression(deep);
+        ASTNode *sub = malloc(sizeof(ASTNode));
+        sub->type = AST_DIVIDE;
+        sub->binary.left = node;
+        sub->binary.right = right;
+
+        node = sub;
+    }
+
+    // Module
+    if ( currentToken().type == TOK_MODULO ) {
+        nextPos();
+
+        ASTNode *right = parseExpression(deep);
+        ASTNode *sub = malloc(sizeof(ASTNode));
+        sub->type = AST_MODULO;
         sub->binary.left = node;
         sub->binary.right = right;
 

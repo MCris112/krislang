@@ -20,7 +20,6 @@ typedef enum {
 
     // FUNCTION
     TOK_IDENTIFIER,
-    TOK_FUNCTION_CALL,
     TOK_RETURN,
 
     //---------------------------

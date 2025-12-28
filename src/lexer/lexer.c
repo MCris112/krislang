@@ -77,42 +77,6 @@ bool evalTokenVariable(char *typeName, const char **reference, TokenType type) {
     return true;
 }
 
-char *evalTokenFunction(const char **reference) {
-    const char *pos = *reference;
-
-    if (!*pos)
-        return NULL;
-
-    // Function name must start with letter or _
-    if (!isalpha(*pos) && *pos != '_')
-        return NULL;
-
-    const char *start = pos;
-
-    while (isalnum(*pos) || *pos == '_')
-        pos++;
-
-    // Must be followed by '('
-    if (*pos != '(') {
-        *reference = start;
-        return NULL;
-    }
-
-    size_t length = pos - start;
-    char *text = malloc(length + 1);
-    if (!text) {
-        perror("malloc");
-        exit(EXIT_FAILURE);
-    }
-
-    memcpy(text, start, length);
-    text[length] = '\0';
-
-    *reference = pos;
-    currentColumn += length;
-    return text;
-}
-
 bool evalTokenText(const char **reference, char *content, const TokenType type) {
     int startColumn = currentColumn;
     const char *pos = *reference;
@@ -460,17 +424,6 @@ void parseLexer(const char *input) {
         // Parse Function
         //---------------------------
         int startColumn = currentColumn;
-        char *funcName = evalTokenFunction(&pos);
-        if (funcName) {
-            addToken((Token){
-                .type = TOK_FUNCTION_CALL,
-                .text = funcName,
-                .line = currentLine,
-                .column = startColumn
-            });
-            currentColumn += strlen(funcName);
-            continue;
-        }
 
         if (strncmp(pos, "RETURN", 6) == 0) {
             addToken((Token){

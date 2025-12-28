@@ -2,12 +2,47 @@
 // Created by crisv on 12/21/2025.
 //
 
+#include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
 #include "../debug.h"
 #include "../helpers/helper.h"
+
+
+int getPrecedence(TokenType type) {
+    switch (type) {
+        case TOK_MULTIPLY:
+        case TOK_DIVIDE:
+        case TOK_MODULO:
+            return 50;
+
+        case TOK_PLUS:
+        case TOK_MINUS:
+            return 40;
+
+        case TOK_EQUAL_EQUAL:
+        case TOK_NOT_EQUAL:
+            return 30;
+
+        case TOK_GREATER_THAN:
+        case TOK_GREATER_EQUAL:
+        case TOK_LESS_THAN:
+        case TOK_LESS_EQUAL:
+            return 25;   // lower than + -, higher than logical
+
+
+        case TOK_LOGICAL_AND:
+            return 20;
+
+        case TOK_LOGICAL_OR:
+            return 10;
+
+        default:
+            return 0;
+    }
+}
 
 ASTNode *parseParameter() {
     // Expect a type
@@ -33,7 +68,6 @@ ASTNode *parseParameter() {
     param->varDecl.name = name;
     param->varDecl.value = NULL; // parameters have no initial value
 
-    printf("[parseParameter] Name: %s\n", name);
     return param;
 }
 
@@ -83,12 +117,10 @@ ASTNode parseFunctionDefinition() {
     while (!isEnd() && currentToken().type != TOK_PARENTHESIS_CLOSE) {
         //nextPos(); // skip coma or first parentesis
 
-        printf("[FUNC_DEF] INSIDE WHILE PARSE FUNCTION ARGS, Current: %s \n", lexerTokenToString(currentToken().type));
         Token token = currentToken(); // for error debug
         ASTNode *arg = parseParameter();
 
         parserAddFunctionArgument( &node.funcDefinition.arguments, arg);
-        printf("[FUNC_DEF] ARG ADDED! now: %d: %s \n", node.funcDefinition.arguments.count, lexerTokenToString(currentToken().type));
 
         if (currentToken().type == TOK_COMMA) {
             nextPos(); // skip comma
@@ -102,7 +134,7 @@ ASTNode parseFunctionDefinition() {
     }
 
     if (currentToken().type != TOK_PARENTHESIS_CLOSE) {
-        syntaxError("Expected ')'", currentToken());
+        syntaxError("Expected ')' in function", currentToken());
     }
 
     nextPos(); // skip ')'
@@ -112,7 +144,7 @@ ASTNode parseFunctionDefinition() {
     }
 
     nextPos();
-    printf("(4) - CURRENT TOKEN: %s\n\n\n", lexerTokenToString(currentToken().type));
+
     parseBody( &node.funcDefinition.body );
 
     if (currentToken().type != TOK_BRACE_CLOSE) {
@@ -168,7 +200,7 @@ void parseFunctionArguments(ASTFunctionArguments *arguments) {
     }
 
     if (currentToken().type != TOK_PARENTHESIS_CLOSE) {
-        syntaxError("Expected ')'", currentToken());
+        syntaxError("Expected ')' in function to end arguments", currentToken());
     }
 
     nextPos(); // skip ')'
@@ -184,33 +216,6 @@ ASTNode *parseFunctionCall() {
     parseFunctionArguments(&func->funcCall.arguments);
 
     return func;
-}
-
-ASTNode *parseCompare(ASTNode *left, int deep) {
-    switch (currentToken().type) {
-        case TOK_EQUAL_EQUAL:
-        case TOK_LESS_THAN:
-        case TOK_LESS_EQUAL:
-        case TOK_GREATER_THAN:
-        case TOK_GREATER_EQUAL:
-        case TOK_NOT_EQUAL:
-            {
-            Token op = currentToken();
-            nextPos();
-
-            ASTNode *right = parseExpression(deep);
-
-            ASTNode *compare = malloc(sizeof(ASTNode));
-            compare->type = AST_COMPARE;
-            compare->compare.operator = op.type;
-            compare->compare.left = left;
-            compare->compare.right = right;
-
-            return compare;
-        }
-        default:
-            return left;
-    }
 }
 
 // ============================
@@ -274,11 +279,9 @@ ASTNode *parsePrimary(int deep) {
 
         case TOK_PARENTHESIS_OPEN:
             nextPos(); // consume '('
-            node = parseExpression(deep + 1);
+            node = parseExpression(0); // Reset precedence inside parentheses
             if (currentToken().type != TOK_PARENTHESIS_CLOSE) {
-                syntaxError("Expected ')'", currentToken());
-                node->type = AST_ERROR;
-                return node;
+                syntaxError("Expected ')' in expression", currentToken());
             }
             break;
 
@@ -291,7 +294,7 @@ ASTNode *parsePrimary(int deep) {
     if (needToSkip)
         nextPos();
 
-    return node;
+   return node;
 }
 
 
@@ -299,6 +302,8 @@ ASTNode *parseExpression(int deep) {
     if (isEnd()) {
         ASTNode *err = malloc(sizeof(ASTNode));
         err->type = AST_ERROR;
+
+        syntaxError("Expected more code here...", beforeToken() );
         return err;
     }
 
@@ -314,87 +319,64 @@ ASTNode *parseExpression(int deep) {
         node->type = AST_UNARY;
         node->unary.operator = TOK_MINUS;
         nextPos(); // consume '-'
-        node->unary.operand = parsePrimary(deep + 1);
+        node->unary.operand = parseExpression(100);
     }else {
-        node = parsePrimary(deep + 1);
+        node = parsePrimary(deep);
     }
 
 
     // ============================
     // BINARY OPERATORS (LEFT‑ASSOCIATIVE)
     // ===========================
-
-    if (currentToken().type == TOK_SEMICOLON) {
+    if (currentToken().type == TOK_SEMICOLON || currentToken().type == TOK_COMMA || currentToken().type == TOK_PARENTHESIS_CLOSE ) {
         return node;
     }
 
-    // CONCAT (+)
-    if (currentToken().type == TOK_PLUS) {
-        nextPos(); // consume '+'
+    while ( !isEnd() ) {
+        if (currentToken().type == TOK_PARENTHESIS_CLOSE) break;
 
-        ASTNode *right = parseExpression(deep);
+        Token operator = currentToken();
+        int opPrecedence = getPrecedence(operator.type);
 
-        ASTNode *concat = malloc(sizeof(ASTNode));
-        concat->type = AST_CONCAT;
-        concat->binary.left = node;
-        concat->binary.right = right;
+        if (opPrecedence <= deep)
+            break;
 
-        node = concat;
-    }
-
-    // SUBTRACT (-)
-    if (currentToken().type == TOK_MINUS) {
-        nextPos(); // consume '-'
-
-        ASTNode *right = parseExpression(deep);
-
-        ASTNode *sub = malloc(sizeof(ASTNode));
-        sub->type = AST_SUBTRACT;
-        sub->binary.left = node;
-        sub->binary.right = right;
-
-        node = sub;
-    }
-
-    // Multiply
-    if ( currentToken().type == TOK_MULTIPLY ) {
         nextPos();
 
-        ASTNode *right = parseExpression(deep);
-        ASTNode *sub = malloc(sizeof(ASTNode));
-        sub->type = AST_MULTIPLY;
-        sub->binary.left = node;
-        sub->binary.right = right;
+        ASTNode *right = parseExpression(opPrecedence);
 
-        node = sub;
+        ASTNode *unionNode = malloc(sizeof(ASTNode));
+        unionNode->binary.left = node;
+        unionNode->binary.right = right;
+
+
+        switch ( operator.type ) {
+            case TOK_PLUS: unionNode->type = AST_CONCAT; break;
+            case TOK_MINUS: unionNode->type = AST_SUBTRACT; break;
+            case TOK_MULTIPLY: unionNode->type = AST_MULTIPLY; break;
+            case TOK_DIVIDE: unionNode->type = AST_DIVIDE; break;
+            case TOK_MODULO: unionNode->type = AST_MODULO; break;
+            case TOK_EQUAL_EQUAL:
+            case TOK_LESS_THAN:
+            case TOK_LESS_EQUAL:
+            case TOK_GREATER_THAN:
+            case TOK_GREATER_EQUAL:
+            case TOK_NOT_EQUAL:
+            {
+                ASTNode *compare = malloc(sizeof(ASTNode));
+                compare->type = AST_COMPARE;
+                compare->compare.operator = operator.type;
+                compare->compare.left = node;
+                compare->compare.right = right;
+
+                unionNode = compare;
+                break;
+            }
+            default: syntaxError("Unknown operator", operator);
+        }
+
+        node = unionNode;
     }
 
-    // Division
-    if ( currentToken().type == TOK_DIVIDE ) {
-        nextPos();
-
-        ASTNode *right = parseExpression(deep);
-        ASTNode *sub = malloc(sizeof(ASTNode));
-        sub->type = AST_DIVIDE;
-        sub->binary.left = node;
-        sub->binary.right = right;
-
-        node = sub;
-    }
-
-    // Module
-    if ( currentToken().type == TOK_MODULO ) {
-        nextPos();
-
-        ASTNode *right = parseExpression(deep);
-        ASTNode *sub = malloc(sizeof(ASTNode));
-        sub->type = AST_MODULO;
-        sub->binary.left = node;
-        sub->binary.right = right;
-
-        node = sub;
-    }
-
-    node = parseCompare(node, deep);
     return node;
 }

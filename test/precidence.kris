@@ -1,0 +1,41 @@
+VOID main() {
+
+    INT $a = 10;
+    INT $b = 3;
+
+    print("=== Basic KrisLang Calculator ===");
+
+    print("a = ");
+    print($a);
+
+    print("b = ");
+    print($b);
+
+    print("a + b = ");
+    print($a + $b);
+
+    print("a - b = ");
+    print($a - $b);
+
+    print("a * b = ");
+    print($a * $b);
+
+    print("a / b = ");
+    print($a / $b);   // returns FLOAT because of promotion
+
+    print("a % b = ");
+    print($a % $b);   // INT-only modulo
+
+    // More complex expressions
+    print("a * (b + 2) = ");
+    print($a * ( $b + 2 ));
+
+    print("a + b * 2 = ");
+    print($a + $b * 2);
+
+    print("a * b % 2 = ");
+    print($a * $b % 2);
+
+}
+
+main();

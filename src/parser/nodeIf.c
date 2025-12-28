@@ -10,7 +10,6 @@
 #include "../debug.h"
 
 void parseNodeIf(ASTBlock *parent) {
-    printf("TOK_LOGICAL_IF====== \n");
     nextPos(); // Skip TOK_LOGICAL_IF
 
     ASTNode *nodeIf = malloc(sizeof(ASTNode));
@@ -26,15 +25,7 @@ void parseNodeIf(ASTBlock *parent) {
 
     nextPos();
 
-    /*
-    if (currentToken().type == TOK_PARENTHESIS_CLOSE) {
-        syntaxError("Empty IF condition", currentToken() );
-    }*/
-
-
     ASTNode *expression = parseExpression(0);
-
-    parserPrintASTNode(expression, 0);
 
     nodeIf->logicalIf.conditional = expression;
 
@@ -61,10 +52,8 @@ void parseNodeIf(ASTBlock *parent) {
 
     nextPos(); // Skipp }
 
-    printf("Current: %s, Line: %d\n", lexerTokenToString(currentToken().type), currentToken().line);
     if (currentToken().type == TOK_LOGICAL_ELSE) {
         nextPos();
-        printf("[INSIDE] - Current: %s, Line: %d\n", lexerTokenToString(currentToken().type), currentToken().line);
 
         if ( currentToken().type == TOK_LOGICAL_IF ) {
             parseNodeIf( &nodeIf->logicalIf.elseBlock );
@@ -78,7 +67,6 @@ void parseNodeIf(ASTBlock *parent) {
 
         nextPos(); // Skipp {
 
-        printf("[INSIDE][BEFORE ELSE] - Current: %s, Line: %d\n", lexerTokenToString(currentToken().type), currentToken().line);
         parseBody(&nodeIf->logicalIf.elseBlock);
         // parseBody( &blockElse );
 

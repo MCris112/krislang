@@ -50,47 +50,48 @@ _Noreturn void syntaxError(const char *message, Token token) {
     exit(EXIT_FAILURE);
 }
 
+
 char *astNodeTypeToString(ASTNodeType type) {
     switch (type) {
-        case AST_PROGRAM:               return "AST_PROGRAM";
-        case AST_BLOCK:                 return "AST_BLOCK";
-        case AST_PRINT_STMT:            return "AST_PRINT_STMT";
+        case AST_PROGRAM: return "AST_PROGRAM";
+        case AST_BLOCK: return "AST_BLOCK";
+        case AST_PRINT_STMT: return "AST_PRINT_STMT";
 
-        case AST_FUNCTION_CALL:         return "AST_FUNCTION_CALL";
-        case AST_FUNCTION_DEFINITION:   return "AST_FUNCTION_DEFINITION";
-        case AST_FUNCTION_PARAMETER:    return "AST_FUNCTION_PARAMETER";
-        case AST_FUNCTION_REFERENCE:    return "AST_FUNCTION_REFERENCE";
+        case AST_FUNCTION_CALL: return "AST_FUNCTION_CALL";
+        case AST_FUNCTION_DEFINITION: return "AST_FUNCTION_DEFINITION";
+        case AST_FUNCTION_PARAMETER: return "AST_FUNCTION_PARAMETER";
+        case AST_FUNCTION_REFERENCE: return "AST_FUNCTION_REFERENCE";
 
-        case AST_LOGICAL_IF:            return "AST_LOGICAL_IF";
-        case AST_RETURN:                return "AST_RETURN";
-        case AST_LOOP_WHILE:            return "AST_LOOP_WHILE";
+        case AST_LOGICAL_IF: return "AST_LOGICAL_IF";
+        case AST_RETURN: return "AST_RETURN";
+        case AST_LOOP_WHILE: return "AST_LOOP_WHILE";
 
-        case AST_TYPE_LITERAL:          return "AST_TYPE_LITERAL";
-        case AST_TEXT:                  return "AST_TEXT";
-        case AST_NUMBER:                return "AST_NUMBER";
-        case AST_NUMBER_DECIMAL:        return "AST_NUMBER_DECIMAL";
-        case AST_BOOLEAN:               return "AST_BOOLEAN";
-        case AST_CHAR:                  return "AST_CHAR";
-        case AST_VOID:                  return "AST_VOID";
-        case AST_NULL:                  return "AST_NULL";
-        case AST_UNKNOWN:               return "AST_UNKNOWN";
-        case AST_ERROR:                 return "AST_ERROR";
+        case AST_TYPE_LITERAL: return "AST_TYPE_LITERAL";
+        case AST_TEXT: return "AST_TEXT";
+        case AST_NUMBER: return "AST_NUMBER";
+        case AST_NUMBER_DECIMAL: return "AST_NUMBER_DECIMAL";
+        case AST_BOOLEAN: return "AST_BOOLEAN";
+        case AST_CHAR: return "AST_CHAR";
+        case AST_VOID: return "AST_VOID";
+        case AST_NULL: return "AST_NULL";
+        case AST_UNKNOWN: return "AST_UNKNOWN";
+        case AST_ERROR: return "AST_ERROR";
 
-        case AST_CONCAT:                return "AST_CONCAT";
-        case AST_SUBTRACT:              return "AST_SUBTRACT";
-        case AST_COMPARE:               return "AST_COMPARE";
-        case AST_UNARY:                 return "AST_UNARY";
-        case AST_MULTIPLY:             return "AST_MULTIPLY";
-        case AST_DIVIDE:             return "AST_DIVIDE";
-        case AST_MODULO:             return "AST_MODULO";
+        case AST_CONCAT: return "AST_CONCAT";
+        case AST_SUBTRACT: return "AST_SUBTRACT";
+        case AST_COMPARE: return "AST_COMPARE";
+        case AST_UNARY: return "AST_UNARY";
+        case AST_MULTIPLY: return "AST_MULTIPLY";
+        case AST_DIVIDE: return "AST_DIVIDE";
+        case AST_MODULO: return "AST_MODULO";
 
-        case AST_VARIABLE_DEFINITION:   return "AST_VARIABLE_DEFINITION";
-        case AST_VARIABLE_CAST:         return "AST_VARIABLE_CAST";
-        case AST_VARIABLE_ASSIGNMENT:   return "AST_VARIABLE_ASSIGNMENT";
+        case AST_VARIABLE_DEFINITION: return "AST_VARIABLE_DEFINITION";
+        case AST_VARIABLE_CAST: return "AST_VARIABLE_CAST";
+        case AST_VARIABLE_ASSIGNMENT: return "AST_VARIABLE_ASSIGNMENT";
 
-        case AST_EOF:                   return "AST_EOF";
+        case AST_EOF: return "AST_EOF";
 
-        default:                        return "AST_<INVALID>";
+        default: return "AST_<INVALID>";
     }
 }
 
@@ -109,8 +110,8 @@ bool isEnd() {
 }
 
 Token currentToken() {
-    if ( isEnd() )
-        syntaxError("Expected more code here", beforeToken() );
+    if (isEnd())
+        syntaxError("Expected more code here", beforeToken());
 
     return getTokens()[current];
 }
@@ -120,10 +121,10 @@ Token beforeToken() {
 }
 
 Token nextToken() {
-    if ( getTokensCount() <= current +1 )
-        syntaxError("Expected more code here", beforeToken() );
+    if (getTokensCount() <= current + 1)
+        syntaxError("Expected more code here", beforeToken());
 
-    return getTokens()[current+1];
+    return getTokens()[current + 1];
 }
 
 ASTNode *addASTNode(ASTBlock *parent, ASTNode child) {
@@ -231,7 +232,7 @@ ASTNodeType fromTokVariableTypeToASTNodeType(TokenType type) {
         case TOK_VARIABLE_TYPE_INT: return AST_NUMBER;
         case TOK_VARIABLE_TYPE_STRING: return AST_TEXT;
         case TOK_VARIABLE_TYPE_BOOLEAN: return AST_BOOLEAN;
-        case TOK_VARIABLE_TYPE_FLOAT : return AST_NUMBER_DECIMAL;
+        case TOK_VARIABLE_TYPE_FLOAT: return AST_NUMBER_DECIMAL;
         case TOK_VARIABLE_TYPE_CHAR: return AST_CHAR;
         case TOK_VARIABLE_TYPE_VOID: return AST_VOID;
         default: return AST_UNKNOWN;
@@ -242,12 +243,12 @@ VarType parseTokToVarType() {
     switch (currentToken().type) {
         case TOK_VARIABLE_TYPE_STRING: return VARIABLE_TYPE_STRING;
         case TOK_VARIABLE_TYPE_INT: return VARIABLE_TYPE_INT;
-        case TOK_VARIABLE_TYPE_FLOAT : return VARIABLE_TYPE_FLOAT;
+        case TOK_VARIABLE_TYPE_FLOAT: return VARIABLE_TYPE_FLOAT;
         case TOK_VARIABLE_TYPE_BOOLEAN: return VARIABLE_TYPE_BOOLEAN;
         case TOK_VARIABLE_TYPE_CHAR: return VARIABLE_TYPE_CHAR;
         case TOK_VARIABLE_TYPE_VOID: return VARIABLE_TYPE_VOID;
         default:
-            syntaxError("The variable type was not expected", beforeToken() );
+            syntaxError("The variable type was not expected", beforeToken());
             return VARIABLE_TYPE_UNKNOWN;
     }
 }
@@ -256,13 +257,10 @@ ASTNode parseTypeLiteral() {
     Token type = currentToken();
     VarType varType = parseTokToVarType();
 
-    printf("\n\n\n(1) - CURRENT TOKEN: %s\n", lexerTokenToString(currentToken().type));
-
-
     Token varName = currentToken();
     int size = -1;
 
-    if ( varName.type == TOK_PARENTHESIS_OPEN ) {
+    if (varName.type == TOK_PARENTHESIS_OPEN) {
         nextPos(); // SKIP '('
 
         Token sizeTok = currentToken();
@@ -278,22 +276,17 @@ ASTNode parseTypeLiteral() {
 
     nextPos();
 
-    printf("(2) - CURRENT TOKEN: %s\n\n\n", lexerTokenToString(currentToken().type));
-
     // Verify if is function definition
     // VOID|TYPE functionName() ...
-    if ( currentToken().type == TOK_IDENTIFIER ) {
+    if (currentToken().type == TOK_IDENTIFIER) {
         return parseFunctionDefinition();
     }
 
-    printf( "[PARSERTYPELITERAL] Current: %s \n", lexerTokenToString(currentToken().type));
-
-    if ( currentToken().type != TOK_VARIABLE) {
-
+    if (currentToken().type != TOK_VARIABLE) {
         ASTNodeType literal = fromTokVariableTypeToASTNodeType(type.type);
 
-        if ( literal ==  AST_UNKNOWN ) {
-            syntaxError( "Something went wrong..., expected a variable type, but UNKNOW returned", type );
+        if (literal == AST_UNKNOWN) {
+            syntaxError("Something went wrong..., expected a variable type, but UNKNOW returned", type);
         }
 
         return (ASTNode){
@@ -304,7 +297,6 @@ ASTNode parseTypeLiteral() {
             }
         };
     }
-
 
 
     // Now expect variable name
@@ -321,12 +313,11 @@ ASTNode parseTypeLiteral() {
     // Parse value
     // Token varValue = currentToken(); nextPos();
     ASTNode *valueNode = parseExpression(0);
-    printf("[VAR][VALUE_NODE] DEFINITION: %s \n", astNodeTypeToString(valueNode->type));
     // TODO check well the tokens, cuz if u pass like "String" this will throw like a normal function call instead of var definition
 
-    printf("CURRENCT TOKEN: %s \n", lexerTokenToString(currentToken().type));
     if (currentToken().type != TOK_SEMICOLON) {
-        syntaxError(strFormat("Semicolon expected - Current: %s", lexerTokenToString(currentToken().type) ), beforeToken());
+        syntaxError(strFormat("Semicolon expected - Current: %s", lexerTokenToString(currentToken().type)),
+                    beforeToken());
     }
 
     nextPos();
@@ -341,14 +332,11 @@ ASTNode parseTypeLiteral() {
         }
     };
 
-    printf("LAST TOKEN ON PARSE TYPE LITERAL: %s \n", lexerTokenToString(currentToken().type));
     return definition;
 }
 
 void *parseBody(ASTBlock *parent) {
-    printf("----------------NEW BODY-------------\n\n");
     while (!isEnd() && currentToken().type != TOK_BRACE_CLOSE) {
-
         if (currentToken().type == TOK_LOGICAL_IF) {
             parseNodeIf(parent);
             continue;
@@ -356,7 +344,7 @@ void *parseBody(ASTBlock *parent) {
 
         // 2. VARIABLE DEFINITIONS
         if (isVariableDefinition()) {
-            addASTNode( parent, parseTypeLiteral() );
+            addASTNode(parent, parseTypeLiteral());
             continue;
         }
 
@@ -374,97 +362,95 @@ void *parseBody(ASTBlock *parent) {
             continue;
         }
 
-        if ( currentToken().type == TOK_RETURN ) {
+        if (currentToken().type == TOK_RETURN) {
             nextPos(); // Skip TOK_RETURN
 
             ASTNode node = (ASTNode){
                 .type = AST_RETURN,
-                .child =  NULL
+                .child = NULL
             };
 
-            if ( currentToken().type != TOK_SEMICOLON) {
+            if (currentToken().type != TOK_SEMICOLON) {
                 node.child = parseExpression(0);
 
-                if ( currentToken().type != TOK_SEMICOLON) {
+                if (currentToken().type != TOK_SEMICOLON) {
                     syntaxError("Expected ';' after return", beforeToken());
                 }
             }
 
             nextPos(); // Skip ;
 
-            addASTNode( parent, node);
+            addASTNode(parent, node);
             continue;
         }
 
-        if ( currentToken().type == TOK_VARIABLE) {
+        if (currentToken().type == TOK_VARIABLE) {
             // Its a variable ASSIGNMENT
-            if ( nextToken().type == TOK_EQUALS ) {
+            if (nextToken().type == TOK_EQUALS) {
                 Token variable = currentToken();
                 nextPos(); // Skip current
                 nextPos(); // Skip =
 
                 ASTNode *expression = parseExpression(0);
 
-                if ( currentToken().type != TOK_SEMICOLON) {
+                if (currentToken().type != TOK_SEMICOLON) {
                     syntaxError("Expected ';' after variable assignment", beforeToken());
                 }
 
-                addASTNode( parent, (ASTNode){
-                    .type = AST_VARIABLE_ASSIGNMENT,
-                    .variableAssignment = {
-                        .name = variable.text,
-                        .value = expression
-                    }
-                } );
+                addASTNode(parent, (ASTNode){
+                               .type = AST_VARIABLE_ASSIGNMENT,
+                               .variableAssignment = {
+                                   .name = variable.text,
+                                   .value = expression
+                               }
+                           });
                 nextPos();
                 continue;
             }
 
-            addASTNode( parent, *parseFunctionCall() );
+            addASTNode(parent, *parseFunctionCall());
             continue;
         }
 
 
-        if ( currentToken().type == TOK_LOOP_WHILE ) {
+        if (currentToken().type == TOK_LOOP_WHILE) {
             nextPos();
 
-            evalExpectedToken( currentToken(), TOK_PARENTHESIS_OPEN, "Expected ( to start using while");
+            evalExpectedToken(currentToken(), TOK_PARENTHESIS_OPEN, "Expected ( to start using while");
             nextPos();
 
             ASTNode *condition = parseExpression(0);
 
-            evalExpectedToken( currentToken(), TOK_PARENTHESIS_CLOSE, "Expected ) after condition expression");
+            evalExpectedToken(currentToken(), TOK_PARENTHESIS_CLOSE, "Expected ) after condition expression");
             nextPos();
 
-            evalExpectedToken( currentToken(), TOK_BRACE_OPEN, "Expected { to start using body");
+            evalExpectedToken(currentToken(), TOK_BRACE_OPEN, "Expected { to start using body");
             nextPos();
 
             ASTNode node = (ASTNode){
                 .type = AST_LOOP_WHILE,
-                .loopWhile =  {
+                .loopWhile = {
                     .condition = condition,
                     .body = malloc(sizeof(ASTBlock))
                 },
             };
             node.loopWhile.body.children = NULL;
             node.loopWhile.body.count = 0,
-            node.loopWhile.body.capacity = 0;
+                    node.loopWhile.body.capacity = 0;
 
-            parseBody( &node.loopWhile.body );
+            parseBody(&node.loopWhile.body);
 
-            evalExpectedToken( currentToken(), TOK_BRACE_CLOSE, "Expected } at end");
+            evalExpectedToken(currentToken(), TOK_BRACE_CLOSE, "Expected } at end");
 
-            addASTNode( parent, node);
+            addASTNode(parent, node);
         }
 
-        if ( currentToken().type == TOK_EOF) {
+        if (currentToken().type == TOK_EOF) {
             return NULL;
         }
 
         nextPos();
     }
-
-    printf("\n\n----------------END BODY-------------\n\n");
 }
 
 ASTNode getAST() {
@@ -486,7 +472,7 @@ ASTNode getAST() {
 
     parseBody(&parent->block);
 
-    parserPrintAST(parent);
+    // parserPrintAST(parent);
 
     if (syntax_error_count > 0) {
         fprintf(stderr,

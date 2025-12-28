@@ -632,5 +632,5 @@ void parseLexer(const char *input) {
 
     addToken((Token){.type = TOK_EOF, .text = NULL});
 
-    lexerPrintTokens(tokens, tokenCount);
+    // lexerPrintTokens(tokens, tokenCount);
 }

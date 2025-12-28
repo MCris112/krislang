@@ -1,36 +1,36 @@
 INT add(INT $x, INT $y) {
-    RETURN $x + $y;
+    return $x + $y;
 }
 
 INT mul(INT $x, INT $y) {
-    RETURN $x * $y;
+    return $x * $y;
 }
 
 INT square(INT $x) {
-    RETURN $x * $x;
+    return $x * $x;
 }
 
 INT max(INT $a, INT $b) {
-    IF ($a > $b) {
-        RETURN $a;
-    } ELSE {
-        RETURN $b;
+    if ($a > $b) {
+        return $a;
+    } else {
+        return $b;
     }
 }
 
 INT abs(INT $x) {
-    IF ($x < 0) {
-        RETURN -$x;
-    } ELSE {
-        RETURN $x;
+    if ($x < 0) {
+        return -$x;
+    } else {
+        return $x;
     }
 }
 
 INT isEven(INT $x) {
-    IF ($x % 2 == 0) {
-        RETURN 1;
-    } ELSE {
-        RETURN 0;
+    if ($x % 2 == 0) {
+        return 1;
+    } else {
+        return 0;
     }
 }
 
@@ -73,7 +73,7 @@ VOID main() {
     // All even numbers are divisible by 2
     // 10 is even
     // Therefore 10 % 2 == 0
-    IF (isEven($a) == 1) {
+    if (isEven($a) == 1) {
         print($a % 2);                  // 0
     }
 

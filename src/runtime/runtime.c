@@ -543,9 +543,9 @@ void runtime() {
     initSymbolTable(&variableTable);
     ASTNode root = getAST();
 
-    printf("\n\n\n\n\n");
+    // printf("\n\n\n\n\n");
 
     runBody(variableTable, &root.block, false);
 
-    printSymbolTable(variableTable);
+    // printSymbolTable(variableTable);
 }

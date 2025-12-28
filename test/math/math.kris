@@ -1,0 +1,92 @@
+
+INT $a = 10;
+INT $b = 3;
+INT $c = 2;
+
+print("=== Complex Math Validation ===");
+
+// Basic precedence
+print($a + $b * $c);          // 10 + (3 * 2) = 16
+print(($a + $b) * $c);        // (10 + 3) * 2 = 26
+
+// Nested parentheses
+print($a * ($b + $c));        // 10 * (3 + 2) = 50
+print(($a * $b) + $c);        // (10 * 3) + 2 = 32
+
+// Deep nesting
+print($a * ($b + ($c * 2)));  // 10 * (3 + 4) = 70
+print(($a + ($b * $c)) * 2);  // (10 + 6) * 2 = 32
+
+// Left‑associativity
+print($a - $b - $c);          // (10 - 3) - 2 = 5
+print($a / $b / $c);          // (10 / 3) / 2 ≈ 1.666666
+
+// Unary + binary interaction
+print(-$a + $b);              // -10 + 3 = -7
+print(-($a + $b));            // -(10 + 3) = -13
+print($a * -$b);              // 10 * -3 = -30
+
+// Modulo precedence
+print($a * $b % $c);          // (10 * 3) % 2 = 0
+print($a % $b * $c);          // (10 % 3) * 2 = 2
+print($a % ($b * $c));        // 10 % (3 * 2) = 4
+
+// Mixed operators
+print($a + $b * $c - $c);     // 10 + 6 - 2 = 14
+print($a * $b + $c % $b);     // 30 + (2 % 3) = 32
+
+// Parentheses + modulo
+print(($a + $b) % $c);        // (10 + 3) % 2 = 1
+print($a + ($b % $c) * 4);    // 10 + (1 * 4) = 14
+
+// Stress test
+print($a * ($b + $c) % ($b + 1)); // (10 * 5) % 4 = 2
+
+print("=== End Math Validation ===");
+
+
+
+VOID main() {
+
+    INT $a = 10;
+    INT $b = 3;
+    INT $c = 2;
+    INT $d = 5;
+
+    print("=== Advanced Math Torture Test ===");
+
+    // Deep nesting + mixed precedence
+    print($a + ($b * ($c + $d)));          // 10 + (3 * (2 + 5)) = 31
+    print(($a + $b) * ($c + $d));          // (10 + 3) * (2 + 5) = 91
+    print($a * (($b + $c) * $d));          // 10 * ((3 + 2) * 5) = 250
+
+    // Unary stacking
+    print(-$a * -$b);                      // (-10) * (-3) = 30
+    print(-(-$a + $b));                    // -(-10 + 3) = 7
+    print(-($a * ($b - $c)));              // -(10 * (3 - 2)) = -10
+
+    // Modulo chaos
+    print($a % $b % $c);                   // (10 % 3) % 2 = 1
+    print($a % ($b % $c));                 // 10 % (3 % 2) = 0
+    print(($a * $b) % ($c + 1));           // (30) % 3 = 0
+
+    // Long chains (left‑associative)
+    print($a - $b + $c - $d);              // ((10 - 3) + 2) - 5 = 4
+    print($a * $b / $c * $d);              // ((10 * 3) / 2) * 5 = 75
+
+    // Parentheses vs no parentheses
+    print($a + $b * $c + $d);              // 10 + 6 + 5 = 21
+    print(($a + $b) * ($c + $d) / $c);     // (13 * 7) / 2 = 45.5
+
+    // Mixed unary + modulo + multiply
+    print(-$a % $b * $c);                  // ((-10 % 3) * 2) = -2
+    print(-($a % ($b * $c)));              // -(10 % 6) = -4
+
+    // Extreme nesting
+    print($a * ($b + ($c * ($d - $c))));   // 10 * (3 + (2 * 3)) = 90
+    print((($a + $b) * $c) % ($d - 1));    // ((13 * 2) % 4) = 2
+
+    print("=== End Torture Test ===");
+}
+
+main();

@@ -479,7 +479,7 @@ EnvValue *runBody(SymbolTable *varTable, ASTBlock *block, bool insideFunction) {
 
         switch (child->type) {
             case AST_VARIABLE_DEFINITION:
-                envDeclare(varTable, child);
+                envDeclare(varTable, &child->varDecl);
                 break;
 
             case AST_VARIABLE_ASSIGNMENT:
@@ -576,5 +576,5 @@ void runtime() {
 
     runBody(variableTable, &root.block, false);
 
-    // printSymbolTable(variableTable);
+    printSymbolTable(variableTable);
 }

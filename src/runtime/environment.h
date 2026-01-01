@@ -6,6 +6,20 @@
 #define KRISLANG_ENVIRONMENT_H
 #include "../parser/parser.h"
 
+// Count bits needed for a number
+static int count_bits(int n) {
+    if (n == 0) return 1;
+    if (n < 0) n = -n;  // Handle negative numbers
+
+    int bits = 0;
+    while (n > 0) {
+        bits++;
+        n >>= 1;
+    }
+    return bits;
+}
+
+#define BITS(n) count_bits(n)
 
 //-------------------------------------------------
 //
@@ -54,6 +68,7 @@ typedef struct {
         struct {
             VarType type;
             EnvValue value;
+            int size; //-1 autosize;
         } variable;
 
         EnvFunctionDefinition function;

@@ -32,6 +32,12 @@ char *parserVarTypeToString(VarType type);
 
 char *parseEnvValueTypeToString( EnvValueType type );
 
+//------------------------------------
+//
+// ASTNode
+//
+//------------------------------------
+char *astNodeTypeToString(ASTNodeType type);
 
 //------------------------------------
 //

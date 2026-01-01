@@ -369,6 +369,60 @@ char *parseEnvValueTypeToString(EnvValueType type) {
 
 //------------------------------------
 //
+// ASTNode
+//
+//------------------------------------
+
+char *astNodeTypeToString(ASTNodeType type) {
+    switch (type) {
+        case AST_PROGRAM: return "AST_PROGRAM";
+        case AST_BLOCK: return "AST_BLOCK";
+        case AST_PRINT_STMT: return "AST_PRINT_STMT";
+
+        case AST_FUNCTION_CALL: return "AST_FUNCTION_CALL";
+        case AST_FUNCTION_DEFINITION: return "AST_FUNCTION_DEFINITION";
+        case AST_FUNCTION_PARAMETER: return "AST_FUNCTION_PARAMETER";
+        case AST_FUNCTION_REFERENCE: return "AST_FUNCTION_REFERENCE";
+
+        case AST_LOGICAL_IF: return "AST_LOGICAL_IF";
+        case AST_RETURN: return "AST_RETURN";
+        case AST_LOOP_WHILE: return "AST_LOOP_WHILE";
+        case AST_LOOP_FOR: return "AST_LOOP_FOR";
+
+        case AST_TYPE_LITERAL: return "AST_TYPE_LITERAL";
+        case AST_TEXT: return "AST_TEXT";
+        case AST_NUMBER: return "AST_NUMBER";
+        case AST_NUMBER_DECIMAL: return "AST_NUMBER_DECIMAL";
+        case AST_BOOLEAN: return "AST_BOOLEAN";
+        case AST_CHAR: return "AST_CHAR";
+        case AST_VOID: return "AST_VOID";
+        case AST_NULL: return "AST_NULL";
+        case AST_UNKNOWN: return "AST_UNKNOWN";
+        case AST_ERROR: return "AST_ERROR";
+
+        case AST_CONCAT: return "AST_CONCAT";
+        case AST_SUBTRACT: return "AST_SUBTRACT";
+        case AST_COMPARE: return "AST_COMPARE";
+        case AST_UNARY: return "AST_UNARY";
+        case AST_MULTIPLY: return "AST_MULTIPLY";
+        case AST_DIVIDE: return "AST_DIVIDE";
+        case AST_MODULO: return "AST_MODULO";
+
+        case AST_VARIABLE_DEFINITION: return "AST_VARIABLE_DEFINITION";
+        case AST_VARIABLE_CAST: return "AST_VARIABLE_CAST";
+        case AST_VARIABLE_ASSIGNMENT: return "AST_VARIABLE_ASSIGNMENT";
+
+        case AST_EOF: return "AST_EOF";
+
+        default: return "AST_<INVALID>";
+    }
+}
+
+
+
+
+//------------------------------------
+//
 // VARIABLES
 //
 //------------------------------------

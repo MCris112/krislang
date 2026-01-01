@@ -13,6 +13,7 @@
 #include "../debug.h"
 #include "../helpers/helper.h"
 
+
 EnvValue *envValueInt(int v) {
     EnvValue *val = malloc(sizeof(EnvValue));
 
@@ -246,7 +247,19 @@ EnvValue *envDeclare(SymbolTable *variableTable, ASTNodeVariableDeclaration *nod
         case VARIABLE_TYPE_INT:
             if (valueNode->type != ENV_INT)
                 abort = true;
-            else value.number = valueNode->number;
+            else {
+                int required_bits = BITS(valueNode->number);
+                printf("DEBUG: value=%d, required_bits=%d, max_size=%d, given=%dbits (%d)\n",
+                       valueNode->number, required_bits, node->size, BITS(valueNode->number), valueNode->number);
+
+                // Only check size if type is correct
+                if (node->size != -1 && BITS(valueNode->number) > node->size) {
+                    syntaxError("Value requires more bits than declared type allows", beforeToken());
+                }
+
+                value.number = valueNode->number;
+            }
+
             break;
         case VARIABLE_TYPE_FLOAT:
             if (valueNode->type != ENV_FLOAT)
@@ -291,7 +304,8 @@ EnvValue *envDeclare(SymbolTable *variableTable, ASTNodeVariableDeclaration *nod
         .name = strdup(node->name),
         .variable = {
             .type = type,
-            .value = value
+            .value = value,
+            .size = node->size,
         }
     };
 
@@ -314,6 +328,8 @@ EnvValue *envVariableAssignment(SymbolTable *table, ASTNode *node) {
     EnvValue *valueNode = runExpression(table, node->variableAssignment.value);
     bool abort = false;
 
+    int size_constraint = variable->variable.size;
+
     switch (variable->variable.type) {
         case VARIABLE_TYPE_STRING:
             if (valueNode->type != ENV_STRING) abort = true;
@@ -325,7 +341,20 @@ EnvValue *envVariableAssignment(SymbolTable *table, ASTNode *node) {
         case VARIABLE_TYPE_INT:
             if (valueNode->type != ENV_INT)
                 abort = true;
-            else variable->variable.value.number = valueNode->number;
+            else {
+                if (size_constraint != -1) {
+                    int required_bits = BITS(valueNode->number);
+
+                    printf("DEBUG: value=%d, required_bits=%d, max_size=%d, given=%dbits\n",
+                           valueNode->number, required_bits, size_constraint, required_bits);
+
+                    if (required_bits > size_constraint) {
+                        syntaxError("Value requires more bits than declared type allows", beforeToken());
+                    }
+                }
+
+                variable->variable.value.number = valueNode->number;
+            }
             break;
         case VARIABLE_TYPE_FLOAT:
             if (valueNode->type != ENV_FLOAT)

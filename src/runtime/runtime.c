@@ -526,6 +526,35 @@ EnvValue *runBody(SymbolTable *varTable, ASTBlock *block, bool insideFunction) {
                         return v;
                 }
                 break;
+            case AST_LOOP_FOR:
+                // Create loop scope
+                SymbolTable *loopScope = symbolTableFromParent(varTable);
+
+                // Declare index variable
+                envDeclare( loopScope, &child->loopFor.param );
+
+                EnvValue *v = NULL;
+
+                while ( child->loopFor.condition ? runExpressionBoolean(loopScope, child->loopFor.condition) : true) {
+                    // Run body inside loop scope
+                    v = runBody( loopScope, &child->loopFor.body, insideFunction );
+
+                    // If body returns a value (like return), exit immediately
+                    if ( insideFunction && v != NULL) {
+                        freeSymbolTable(loopScope);
+                        return v;
+                    }
+
+                    // Auto-increment
+                    EnvValue *param = envGetVariableValue( loopScope, child->loopFor.param.name );
+                    param->number += 1;
+                }
+
+                freeSymbolTable(loopScope);
+
+                if (insideFunction && v != NULL)
+                    return v;
+                break;
             default:
                 fprintf(stderr, "Unknown AST node type (%s)\n",
                         astNodeTypeToString(child->type));

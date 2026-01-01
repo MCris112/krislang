@@ -180,15 +180,14 @@ bool envIsVariableSameAsType(VarType variable, EnvValueType env) {
 }
 
 
-void envDeclare(SymbolTable *variableTable, ASTNode *node) {
-    if (envFind(variableTable, ENV_TYPE_VARIABLE, node->varDecl.name)) {
+EnvValue *envDeclare(SymbolTable *variableTable, ASTNodeVariableDeclaration *node) {
+    if (envFind(variableTable, ENV_TYPE_VARIABLE, node->name)) {
         syntaxError("Variable already defined", getTokens()[0]);
-        return;
     }
 
-    VarType type = node->varDecl.varType;
+    VarType type = node->varType;
 
-    EnvValue *valueNode = runExpression(variableTable, node->varDecl.value);
+    EnvValue *valueNode = runExpression(variableTable, node->value);
 
     // Avoid garbage memory
     EnvValue value = {0};
@@ -236,7 +235,7 @@ void envDeclare(SymbolTable *variableTable, ASTNode *node) {
         fprintf(
             stderr,
             "error: type mismatch in variable assignment\n  %s > expected %s\n  received %s",
-            node->varDecl.name,
+            node->name,
             parserVarTypeToString(type),
             parseEnvValueTypeToString(valueNode->type)
         );
@@ -247,7 +246,7 @@ void envDeclare(SymbolTable *variableTable, ASTNode *node) {
     // Assign symbol
     Environment symbol = (Environment){
         .type = ENV_TYPE_VARIABLE,
-        .name = strdup(node->varDecl.name),
+        .name = strdup(node->name),
         .variable = {
             .type = type,
             .value = value
@@ -255,6 +254,8 @@ void envDeclare(SymbolTable *variableTable, ASTNode *node) {
     };
 
     symbolTableAddChild(variableTable, symbol);
+
+    return &value;
 }
 
 EnvValue *envVariableAssignment(SymbolTable *table, ASTNode *node) {

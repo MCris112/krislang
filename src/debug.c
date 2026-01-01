@@ -301,14 +301,11 @@ void parserPrintASTNode(ASTNode *node, int indent) {
             break;
         case AST_LOOP_FOR:
             printIndent(indent + 1);
-            printf("Var definition:\n");
-            parserPrintASTNode(node->loopFor.variable.value, indent + 2);
+            printf("Var definition (%s):\n", node->loopFor.param.name);
             printIndent(indent + 1);
             printf("CONDITION:\n");
             parserPrintASTNode(node->loopFor.condition, indent + 2);
             printIndent(indent + 1);
-            printf("increment:\n");
-            parserPrintASTNode(node->loopFor.increment, indent + 2);
 
             printIndent(indent + 1);
             printf("BODY:\n");

@@ -105,9 +105,8 @@ typedef struct {
 } ASTNodeVariableDeclaration;
 
 typedef struct {
-    ASTNodeVariableDeclaration variable;
+    ASTNodeVariableDeclaration param;
     struct ASTNode *condition;
-    struct ASTNode *increment;
 
     ASTBlock body;
 } ASTLoopFor;

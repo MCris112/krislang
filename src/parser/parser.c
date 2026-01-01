@@ -451,26 +451,32 @@ void *parseBody(ASTBlock *parent) {
             evalExpectedToken(currentToken(), TOK_PARENTHESIS_OPEN, "Expected ( to start using while");
             nextPos();
 
-            ASTNode param = parseTypeLiteral();
 
-            ASTNode *condition = parseExpression(0);
+            evalExpectedToken( currentToken(), TOK_VARIABLE, "Expected a variable name");
+            ASTNodeVariableDeclaration *param = malloc(sizeof(ASTNodeVariableDeclaration));
+            param->name = strdup(currentToken().text);
+            param->size = -1;
+            param->varType = VARIABLE_TYPE_INT;
+            param->value = NULL;
 
-            evalExpectedToken(currentToken(), TOK_SEMICOLON, "Expected ; after FOR condition");
             nextPos();
 
-            Token variable = currentToken();
-            evalExpectedToken(currentToken(), TOK_VARIABLE, "Expected variable to update");
-            nextPos();
+            // In case dev does WHILE ( $i = 2; ... ){}
+            if ( currentToken().type == TOK_EQUALS ) {
+                nextPos();
 
-            evalExpectedToken(currentToken(), TOK_EQUALS, "Expected = in FOR");
-            nextPos();
+                param->value = parseExpression(0);
+            }else {
+                param->value = malloc(sizeof(ASTNode));
+                param->value->type = AST_NUMBER;
+                param->value->number = 0;
+            }
 
-            ASTNode *increment = malloc(sizeof(ASTNode));
-            increment->type = AST_VARIABLE_ASSIGNMENT;
-            increment->variableAssignment = (ASTVariableAssignment){
-                .name = variable.text,
-                .value = parseExpression(0)
-            };
+            ASTNode *condition = NULL;
+            if ( currentToken().type == TOK_SEMICOLON ) {
+                nextPos();
+                condition = parseExpression(0);
+            }
 
             evalExpectedToken(currentToken(), TOK_PARENTHESIS_CLOSE, "Expected ) after FOR");
             nextPos();
@@ -481,14 +487,11 @@ void *parseBody(ASTBlock *parent) {
             ASTNode node = (ASTNode){
                 .type = AST_LOOP_FOR,
                 .loopFor = {
-                    .variable = param.varDecl,
+                    .param = *param,
                     .condition = condition,
-                    .increment = NULL,
                     .body = malloc(sizeof(ASTBlock))
                 },
             };
-
-            node.loopFor.increment = increment;
 
             node.loopFor.body.children = NULL;
             node.loopFor.body.count = 0,

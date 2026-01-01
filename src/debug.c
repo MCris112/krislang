@@ -614,6 +614,11 @@ void printSymbolTable(SymbolTable *variableTable) {
                    sym->function.body->count);
         }
 
+        else if ( sym->type == ENV_TYPE_CLASS ) {
+            printf("kind: CLASS  functions: %d  body: %d",
+                  sym->class.functions.count,
+                  sym->class.functions.count);
+        }
         printf("\n");
     }
 

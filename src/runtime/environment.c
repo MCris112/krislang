@@ -481,3 +481,30 @@ EnvValue envValueDeepCopy(EnvValue *src) {
 
     return out;
 }
+
+void envDeclareClass(SymbolTable *table, ASTClass classNode ) {
+
+    if ( envFind( table, ENV_TYPE_CLASS, classNode.name ) ) {
+        syntaxError("Already defined class", beforeToken());
+    }
+
+    Environment environment = (Environment){
+        .type = ENV_TYPE_CLASS,
+        .name = classNode.name,
+        .class = {
+            .functions = classNode.functions,
+        }
+    };
+
+    symbolTableAddChild( table, environment );
+}
+
+ASTNode *envGetClassMethod(EnvClassDefinition *cls, char *methodName) {
+    for (int i = 0; i < cls->functions.count; i++) {
+        ASTNode *func = cls->functions.children[i];
+        if (strcmp(func->funcDefinition.name, methodName) == 0) {
+            return func;
+        }
+    }
+    return NULL;
+}

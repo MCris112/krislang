@@ -39,7 +39,8 @@ typedef enum {
 
 typedef enum {
     ENV_TYPE_VARIABLE,
-    ENV_TYPE_FUNCTION
+    ENV_TYPE_FUNCTION,
+    ENV_TYPE_CLASS
 } EnvironmentType;
 
 typedef struct {
@@ -61,6 +62,10 @@ typedef struct {
 } EnvFunctionDefinition;
 
 typedef struct {
+    ASTBlock functions;
+} EnvClassDefinition;
+
+typedef struct {
     EnvironmentType type;
     char *name;
 
@@ -72,6 +77,8 @@ typedef struct {
         } variable;
 
         EnvFunctionDefinition function;
+
+        EnvClassDefinition class;
     };
 
 } Environment;
@@ -124,5 +131,9 @@ void envDeclareFunction(SymbolTable *variableTable, ASTNode *node);
 void freeSymbolTable(SymbolTable *table);
 
 EnvValue envValueDeepCopy(EnvValue *src);
+
+void envDeclareClass(SymbolTable *table, ASTClass classNode );
+
+ASTNode *envGetClassMethod(EnvClassDefinition *cls, char *methodName);
 
 #endif //KRISLANG_ENVIRONMENT_H

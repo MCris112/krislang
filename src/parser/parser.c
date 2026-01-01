@@ -11,7 +11,6 @@
 
 #include "../debug.h"
 #include "../helpers/helper.h"
-#include "../runtime/runtime.h"
 
 int syntax_error_count = 0;
 

@@ -555,6 +555,10 @@ EnvValue *runBody(SymbolTable *varTable, ASTBlock *block, bool insideFunction) {
                 if (insideFunction && v != NULL)
                     return v;
                 break;
+            case AST_CLASS:
+                envDeclareClass( varTable, child->class );
+
+                break;
             default:
                 fprintf(stderr, "Unknown AST node type (%s)\n",
                         astNodeTypeToString(child->type));
@@ -576,5 +580,5 @@ void runtime() {
 
     runBody(variableTable, &root.block, false);
 
-    // printSymbolTable(variableTable);
+    printSymbolTable(variableTable);
 }

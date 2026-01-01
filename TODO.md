@@ -7,6 +7,9 @@ This document describes the roadmap and architecture plan for KrisLang, organize
 
 ---
 
+- [ ] Better control for bits, on each type
+
+
 ## Project Goals
 
 - Build a real programming language, not a toy

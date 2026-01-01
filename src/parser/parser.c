@@ -486,7 +486,7 @@ ASTNode getAST() {
 
     parseBody(&parent->block);
 
-    parserPrintAST(parent);
+    // parserPrintAST(parent);
 
     if (syntax_error_count > 0) {
         fprintf(stderr,

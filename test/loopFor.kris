@@ -1,0 +1,361 @@
+print("===== FOR LOOP TEST START =====");
+
+// ===============================
+// BASIC FOR LOOP
+// ===============================
+print("-- BASIC FOR LOOP --");
+
+FOR ($i; $i < 5) {
+    print($i);
+}
+// Expected: 0 1 2 3 4
+
+// ===============================
+// FOR WITH DIFFERENT LIMIT
+// ===============================
+print("-- FOR WITH LIMIT 10 --");
+
+FOR ($j; $j < 10) {
+    print($j);
+}
+// Expected: 0 1 2 3 4 5 6 7 8 9
+
+// ===============================
+// NESTED FOR LOOPS
+// ===============================
+print("-- NESTED FOR LOOPS --");
+
+FOR ($i2; $i2 < 3) {
+    FOR ($j2; $j2 < 2) {
+        print("i=" + $i2 + " j=" + $j2);
+    }
+}
+// Expected: i=0 j=0, i=0 j=1, i=1 j=0, i=1 j=1, i=2 j=0, i=2 j=1
+
+// ===============================
+// FOR WITH CONDITIONAL INSIDE
+// ===============================
+print("-- FOR WITH CONDITIONAL --");
+
+FOR ($loop1; $loop1 < 10) {
+    IF ($loop1 % 2 == 0) {
+        print($loop1 + " is even");
+    } ELSE {
+        print($loop1 + " is odd");
+    }
+}
+
+// ===============================
+// FOR WITH INPUT
+// ===============================
+print("-- FOR WITH INPUT --");
+
+INT $userLimit = input("Enter loop limit (e.g., 5): ", INT);
+
+FOR ($iter; $iter < $userLimit) {
+    print("Loop iteration: " + $iter);
+}
+
+// ===============================
+// FOR MULTIPLICATION TABLE
+// ===============================
+print("-- MULTIPLICATION TABLE --");
+
+INT $number = input("Enter number for multiplication table: ", INT);
+INT $result = 0;
+
+FOR ($mult; $mult < 10) {
+    $result = $number * $mult;
+    print($number + " x " + $mult + " = " + $result);
+}
+
+// ===============================
+// FOR WITH VARIABLE ACCUMULATION
+// ===============================
+print("-- FOR WITH ACCUMULATION --");
+
+INT $sum = 0;
+
+FOR ($counter; $counter < 5) {
+    $sum = $sum + $counter;
+    print("Sum: " + $sum);
+}
+
+print("Final sum: " + $sum);
+// Expected: Final sum: 10 (0+1+2+3+4)
+
+// ===============================
+// NESTED FOR PATTERN
+// ===============================
+print("-- NESTED FOR WITH INPUT --");
+
+INT $rows = input("Enter number of rows: ", INT);
+INT $cols = input("Enter number of columns: ", INT);
+STRING $line = "";
+
+FOR ($r; $r < $rows) {
+    $line = "";
+
+    FOR ($c; $c < $cols) {
+        $line = $line + "*";
+    }
+
+    print($line);
+}
+
+// ===============================
+// FOR CALCULATING FACTORIAL
+// ===============================
+print("-- FACTORIAL CALCULATOR --");
+
+INT $num = input("Enter number for factorial: ", INT);
+INT $factorial = 1;
+
+FOR ($facti; $facti < $num) {
+    $factorial = $factorial * ($facti + 1);
+}
+
+print($num + "! = " + $factorial);
+
+// ===============================
+// FOR SCOPE TEST
+// ===============================
+print("-- FOR SCOPE TEST --");
+
+INT $outer = 100;
+INT $inner = 0;
+
+FOR ($scopei; $scopei < 3) {
+    $inner = 50;
+    print("Outer: " + $outer + " Inner: " + $inner + " i: " + $scopei);
+    $inner = $inner + 1;
+}
+
+print("After loop, outer: " + $outer);
+
+// ===============================
+// EMPTY FOR LOOP (EDGE CASE)
+// ===============================
+print("-- EMPTY FOR LOOP --");
+
+FOR ($empty; $empty < 0) {
+    print("BUG: This should not print");
+}
+
+print("Empty loop completed");
+
+// ===============================
+// FOR WITH SINGLE ITERATION
+// ===============================
+print("-- SINGLE ITERATION FOR --");
+
+FOR ($single; $single < 1) {
+    print("Single iteration: " + $single);
+}
+
+// ===============================
+// PATTERN GENERATOR
+// ===============================
+print("-- PATTERN GENERATOR --");
+
+INT $size = input("Enter pattern size: ", INT);
+STRING $pattern = "";
+
+FOR ($pati; $pati < $size) {
+    $pattern = "";
+
+    FOR ($patj; $patj <= $pati) {
+        $pattern = $pattern + "*";
+    }
+
+    print($pattern);
+}
+
+// ===============================
+// COUNTDOWN
+// ===============================
+print("-- COUNTDOWN --");
+
+INT $countdown = input("Enter countdown start: ", INT);
+INT $downval = 0;
+
+FOR ($down; $down < $countdown) {
+    $downval = $countdown - $down;
+    print($downval);
+}
+
+print("LIFTOFF!");
+
+// ===============================
+// SUM OF EVEN NUMBERS
+// ===============================
+print("-- SUM OF EVEN NUMBERS --");
+
+INT $limit = input("Enter limit: ", INT);
+INT $evensum = 0;
+
+FOR ($eveni; $eveni < $limit) {
+    IF ($eveni % 2 == 0) {
+        $evensum = $evensum + $eveni;
+    }
+}
+
+print("Sum of even numbers from 0 to " + $limit + " = " + $evensum);
+
+// ===============================
+// FIBONACCI SEQUENCE
+// ===============================
+print("-- FIBONACCI SEQUENCE --");
+
+INT $fibcount = input("How many Fibonacci numbers? ", INT);
+INT $fiba = 0;
+INT $fibb = 1;
+INT $fibtemp = 0;
+
+FOR ($fibi; $fibi < $fibcount) {
+    print($fiba);
+    $fibtemp = $fiba + $fibb;
+    $fiba = $fibb;
+    $fibb = $fibtemp;
+}
+
+// ===============================
+// STRESS TEST
+// ===============================
+print("-- STRESS TEST (1000 iterations) --");
+
+INT $count = 0;
+
+FOR ($stress; $stress < 1000) {
+    $count = $count + 1;
+}
+
+print("Completed " + $count + " iterations");
+
+// ===============================
+// REVERSE PATTERN
+// ===============================
+print("-- REVERSE PATTERN --");
+
+INT $revsize = input("Enter pattern size: ", INT);
+STRING $revline = "";
+INT $stars = 0;
+
+FOR ($revi; $revi < $revsize) {
+    $revline = "";
+    $stars = $revsize - $revi;
+
+    FOR ($revj; $revj < $stars) {
+        $revline = $revline + "*";
+    }
+
+    print($revline);
+}
+
+// ===============================
+// PRIME NUMBER CHECK
+// ===============================
+print("-- PRIME NUMBER CHECK --");
+
+INT $testnum = input("Enter number to test for prime: ", INT);
+BOOLEAN $isprime = TRUE;
+INT $div = 0;
+
+IF ($testnum <= 1) {
+    $isprime = FALSE;
+}
+
+FOR ($divisor; $divisor < $testnum - 1) {
+    $div = $divisor + 2;
+    IF ($testnum % $div == 0) {
+        $isprime = FALSE;
+    }
+}
+
+IF ($isprime) {
+    print($testnum + " is prime");
+} ELSE {
+    print($testnum + " is not prime");
+}
+
+// ===============================
+// SQUARE PATTERN
+// ===============================
+print("-- SQUARE PATTERN --");
+
+INT $squaresize = input("Enter square size: ", INT);
+STRING $sqline = "";
+
+FOR ($sqr; $sqr < $squaresize) {
+    $sqline = "";
+
+    FOR ($sqc; $sqc < $squaresize) {
+        $sqline = $sqline + "* ";
+    }
+
+    print($sqline);
+}
+
+// ===============================
+// SUM OF SQUARES
+// ===============================
+print("-- SUM OF SQUARES --");
+
+INT $sqnum = input("Enter number: ", INT);
+INT $sqsum = 0;
+INT $square = 0;
+
+FOR ($sqi; $sqi < $sqnum) {
+    $square = ($sqi + 1) * ($sqi + 1);
+    $sqsum = $sqsum + $square;
+    print(($sqi + 1) + "^2 = " + $square);
+}
+
+print("Sum of squares: " + $sqsum);
+
+// ===============================
+// NESTED TRIPLE LOOP
+// ===============================
+print("-- TRIPLE NESTED LOOP --");
+
+FOR ($ti; $ti < 2) {
+    FOR ($tj; $tj < 2) {
+        FOR ($tk; $tk < 2) {
+            print("i=" + $ti + " j=" + $tj + " k=" + $tk);
+        }
+    }
+}
+
+// ===============================
+// POWER CALCULATION
+// ===============================
+print("-- POWER CALCULATION --");
+
+INT $base = input("Enter base: ", INT);
+INT $exponent = input("Enter exponent: ", INT);
+INT $power = 1;
+
+FOR ($powi; $powi < $exponent) {
+    $power = $power * $base;
+}
+
+print($base + "^" + $exponent + " = " + $power);
+
+// ===============================
+// AVERAGE CALCULATOR
+// ===============================
+print("-- AVERAGE CALCULATOR --");
+
+INT $numcount = input("How many numbers? ", INT);
+INT $total = 0;
+INT $inputval = 0;
+
+FOR ($avgi; $avgi < $numcount) {
+    $inputval = input("Enter number: ", INT);
+    $total = $total + $inputval;
+}
+
+FLOAT $average = $total / $numcount;
+print("Average: " + $average);
+
+print("===== FOR LOOP TEST END =====");

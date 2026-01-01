@@ -248,10 +248,6 @@ EnvValue *envDeclare(SymbolTable *variableTable, ASTNodeVariableDeclaration *nod
             if (valueNode->type != ENV_INT)
                 abort = true;
             else {
-                int required_bits = BITS(valueNode->number);
-                printf("DEBUG: value=%d, required_bits=%d, max_size=%d, given=%dbits (%d)\n",
-                       valueNode->number, required_bits, node->size, BITS(valueNode->number), valueNode->number);
-
                 // Only check size if type is correct
                 if (node->size != -1 && BITS(valueNode->number) > node->size) {
                     syntaxError("Value requires more bits than declared type allows", beforeToken());
@@ -344,9 +340,6 @@ EnvValue *envVariableAssignment(SymbolTable *table, ASTNode *node) {
             else {
                 if (size_constraint != -1) {
                     int required_bits = BITS(valueNode->number);
-
-                    printf("DEBUG: value=%d, required_bits=%d, max_size=%d, given=%dbits\n",
-                           valueNode->number, required_bits, size_constraint, required_bits);
 
                     if (required_bits > size_constraint) {
                         syntaxError("Value requires more bits than declared type allows", beforeToken());

@@ -1,3 +1,18 @@
-INT(1) $num = 1;
+// ===============================
+// AVERAGE CALCULATOR
+// ===============================
+print("-- AVERAGE CALCULATOR --");
 
-$num = 3;
+INT $numcount = input("How many numbers? ", INT);
+INT $total = 0;
+INT $inputval = 0;
+
+FOR ($avgi; $avgi < $numcount) {
+    $inputval = input("Enter number: ", INT);
+    $total = $total + $inputval;
+}
+
+FLOAT $average = $total / $numcount;
+print("Average: " + $average);
+
+print("===== FOR LOOP TEST END =====");

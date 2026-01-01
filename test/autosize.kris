@@ -1,0 +1,156 @@
+print("===== BIT SIZE CONSTRAINT TEST START =====");
+
+// ===============================
+// VALID DECLARATIONS
+// ===============================
+print("-- VALID DECLARATIONS --");
+
+INT(1) $bit1 = 1;              // 1 requires 1 bit: 1
+print("INT(1) = 1: OK");
+
+INT(2) $bit2 = 3;              // 3 requires 2 bits: 11
+print("INT(2) = 3: OK");
+
+INT(3) $bit3 = 7;              // 7 requires 3 bits: 111
+print("INT(3) = 7: OK");
+
+INT(4) $bit4 = 15;             // 15 requires 4 bits: 1111
+print("INT(4) = 15: OK");
+
+INT(8) $bit8 = 255;            // 255 requires 8 bits: 11111111
+print("INT(8) = 255: OK");
+
+INT(1) $zero = 0;              // 0 requires 1 bit (edge case)
+print("INT(1) = 0: OK");
+
+// ===============================
+// INVALID DECLARATIONS (SHOULD ERROR)
+// ===============================
+//print("-- INVALID DECLARATIONS (SHOULD ERROR) --");
+//
+//INT(1) $overflow1 = 2;         // ERROR: 2 requires 2 bits (10)
+//print("BUG: INT(1) = 2 should error");
+//
+//INT(1) $overflow2 = 3;         // ERROR: 3 requires 2 bits (11)
+//print("BUG: INT(1) = 3 should error");
+//
+//INT(2) $overflow3 = 4;         // ERROR: 4 requires 3 bits (100)
+//print("BUG: INT(2) = 4 should error");
+//
+//INT(3) $overflow4 = 8;         // ERROR: 8 requires 4 bits (1000)
+//print("BUG: INT(3) = 8 should error");
+//
+//INT(4) $overflow5 = 16;        // ERROR: 16 requires 5 bits (10000)
+//print("BUG: INT(4) = 16 should error");
+
+// ===============================
+// VALID ASSIGNMENTS
+// ===============================
+print("-- VALID ASSIGNMENTS --");
+
+INT(3) $num1 = 1;
+$num1 = 7;                     // OK: 7 fits in 3 bits
+print("INT(3) assign 7: OK");
+
+INT(4) $num2 = 1;
+$num2 = 15;                    // OK: 15 fits in 4 bits
+print("INT(4) assign 15: OK");
+
+INT(8) $num3 = 0;
+$num3 = 100;                   // OK: 100 fits in 8 bits
+print("INT(8) assign 100: OK");
+
+// ===============================
+// INVALID ASSIGNMENTS (SHOULD ERROR)
+// ===============================
+//print("-- INVALID ASSIGNMENTS (SHOULD ERROR) --");
+
+//INT(1) $assign1 = 1;
+//$assign1 = 3;                  // ERROR: 3 requires 2 bits
+////print("BUG: INT(1) assign 3 should error"); //OK
+//
+//INT(2) $assign2 = 2;
+//$assign2 = 4;                  // ERROR: 4 requires 3 bits
+////print("BUG: INT(2) assign 4 should error"); // OK
+//
+//INT(3) $assign3 = 5;
+//$assign3 = 10;                 // ERROR: 10 requires 4 bits (1010)
+////print("BUG: INT(3) assign 10 should error"); // OK
+
+//INT(4) $assign4 = 10;
+//$assign4 = 20;                 // ERROR: 20 requires 5 bits (10100)
+//print("BUG: INT(4) assign 20 should error");
+
+// ===============================
+// BOUNDARY TESTS
+// ===============================
+print("-- BOUNDARY TESTS --");
+
+INT(1) $boundary1 = 1;         // Max for 1 bit: 1
+print("INT(1) = 1 (max): OK");
+
+INT(2) $boundary2 = 3;         // Max for 2 bits: 3 (11)
+print("INT(2) = 3 (max): OK");
+
+INT(3) $boundary3 = 7;         // Max for 3 bits: 7 (111)
+print("INT(3) = 7 (max): OK");
+
+INT(4) $boundary4 = 15;        // Max for 4 bits: 15 (1111)
+print("INT(4) = 15 (max): OK");
+
+INT(8) $boundary8 = 255;       // Max for 8 bits: 255
+print("INT(8) = 255 (max): OK");
+
+// ===============================
+// EXPRESSIONS WITH CONSTRAINTS
+// ===============================
+print("-- EXPRESSIONS WITH CONSTRAINTS --");
+
+INT(3) $expr1 = 1 + 2;         // 3 fits in 3 bits
+print("INT(3) = 1+2: OK");
+
+INT(4) $expr2 = 5 + 5;         // 10 fits in 4 bits
+print("INT(4) = 5+5: OK");
+
+//INT(3) $expr3 = 2 * 4;         // ERROR: 8 requires 4 bits
+//print("BUG: INT(3) = 2*4 should error");
+
+INT(2) $expr4 = 1 + 1;         // 2 fits in 2 bits
+print("INT(2) = 1+1: OK");
+//
+//INT(2) $expr5 = 2 + 2;         // ERROR: 4 requires 3 bits
+//print("BUG: INT(2) = 2+2 should error");
+
+// ===============================
+// ASSIGNMENTS FROM EXPRESSIONS
+// ===============================
+print("-- ASSIGNMENTS FROM EXPRESSIONS --");
+
+INT(4) $calc1 = 5;
+$calc1 = 2 + 3;                // OK: 5 fits
+print("INT(4) = 2+3: OK");
+
+INT(3) $calc2 = 1;
+$calc2 = 3 + 3;                // OK: 6 fits in 3 bits
+print("INT(3) = 3+3: OK");
+//
+//INT(3) $calc3 = 1;
+//$calc3 = 4 + 4;                // ERROR: 8 requires 4 bits
+//print("BUG: INT(3) = 4+4 should error");
+
+//INT(2) $calc4 = 1;
+//$calc4 = 2 * 2;                // ERROR: 4 requires 3 bits
+//print("BUG: INT(2) = 2*2 should error");
+
+// ===============================
+// NEGATIVE NUMBERS (IF SUPPORTED)
+// ===============================
+print("-- NEGATIVE NUMBERS --");
+
+INT(4) $neg1 = -1;             // Depends on signed/unsigned
+print("INT(4) = -1: Check implementation");
+
+INT(5) $neg2 = -10;
+print("INT(5) = -10: Check implementation");
+
+print("===== BIT SIZE CONSTRAINT TEST END =====");

@@ -576,5 +576,5 @@ void runtime() {
 
     runBody(variableTable, &root.block, false);
 
-    printSymbolTable(variableTable);
+    // printSymbolTable(variableTable);
 }

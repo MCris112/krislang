@@ -45,7 +45,7 @@ int getTokensCount() {
     return tokenCount;
 }
 
-bool evalTokenVariable(char *typeName, const char **reference, TokenType type) {
+bool evalTokenVariable(char *typeName, const char **reference, LexerTokenType type) {
     int startColumn = currentColumn;
     const char *pos = *reference;
 
@@ -78,7 +78,7 @@ bool evalTokenVariable(char *typeName, const char **reference, TokenType type) {
     return true;
 }
 
-bool evalTokenText(const char **reference, char *content, const TokenType type) {
+bool evalTokenText(const char **reference, char *content, const LexerTokenType type) {
     int startColumn = currentColumn;
     const char *pos = *reference;
 
@@ -506,6 +506,47 @@ void parseLexer(const char *input) {
             currentColumn += 2;
             continue;
         }
+
+        //---------------------------
+        // POO - Classes
+        //---------------------------
+        if ( validateWord( pos, "CLASS") ) {
+            addToken((Token){
+                .type = TOK_CLASS,
+                .line = currentLine,
+                .column = startColumn
+            });
+
+            pos += 5;
+            currentColumn += 5;
+            continue;
+        }
+
+        if ( validateWord( pos, "PUBLIC") ) {
+            addToken((Token){
+                .type = TOK_PUBLIC,
+                .line = currentLine,
+                .column = startColumn
+            });
+
+            pos += 6;
+            currentColumn += 6;
+            continue;
+        }
+
+        if ( validateWord( pos, "PRIVATE") ) {
+            addToken((Token){
+                .type = TOK_PRIVATE,
+                .line = currentLine,
+                .column = startColumn
+            });
+
+            pos += 7;
+            currentColumn += 7;
+            continue;
+        }
+
+
         if (evalTokenText(&pos, "&&", TOK_LOGICAL_AND)) continue;
         if (evalTokenText(&pos, "||", TOK_LOGICAL_OR)) continue;
         if (evalTokenText(&pos, "!", TOK_LOGICAL_NOT)) continue;
@@ -560,7 +601,7 @@ void parseLexer(const char *input) {
         //---------------------------
         if (isdigit(*pos)) {
             startColumn = currentColumn;
-            TokenType type = TOK_NUMBER;
+            LexerTokenType type = TOK_NUMBER;
             const char *start = pos;
 
             while (isdigit(*pos)) {

@@ -1,5 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
+#include <windows.h>
 
 #include "src/lexer/lexer.h"
 #include "src/runtime/runtime.h"
@@ -44,6 +46,10 @@ char *readFile(FILE *input) {
 }
 
 int main(int argc, char *argv[]) {
+    // Enable UTF-8 output on Windows
+    SetConsoleOutputCP(CP_UTF8);
+    setvbuf(stdout, NULL, _IOFBF, 1000);
+
     FILE *input = stdin;
 
     // Open file if provided

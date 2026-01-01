@@ -92,14 +92,21 @@ typedef enum {
     TOK_LOOP_WHILE,
     TOK_LOOP_FOR,
 
+    //---------------------------
+    // POO - Classes
+    //---------------------------
+    TOK_CLASS,
+    TOK_PUBLIC,
+    TOK_PRIVATE,
+
     TOK_WHITESPACE,
     TOK_COMMENT_NORMAL, // -> //
     TOK_EOF
 
-} TokenType;
+} LexerTokenType;
 
 typedef struct {
-    TokenType type;
+    LexerTokenType type;
     int line;
     int column;
 

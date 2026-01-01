@@ -113,7 +113,7 @@ ASTNode *addASTNode(ASTBlock *parent, ASTNode child) {
     return node;
 }
 
-bool evalExpectedToken(Token token, TokenType expected, char *message) {
+bool evalExpectedToken(Token token, LexerTokenType expected, char *message) {
     if (token.type != expected) {
         if (!message)
             message = "Sintaxis unexpected, please check the code";
@@ -173,7 +173,7 @@ ASTNode *evalVariableDefinitionValue(Token token) {
 }
 
 bool isVariableDefinition() {
-    TokenType t = currentToken().type;
+    LexerTokenType t = currentToken().type;
     return t == TOK_VARIABLE_TYPE_INT ||
            t == TOK_VARIABLE_TYPE_STRING ||
            t == TOK_VARIABLE_TYPE_BOOLEAN ||
@@ -182,7 +182,7 @@ bool isVariableDefinition() {
            t == TOK_VARIABLE_TYPE_VOID;
 }
 
-ASTNodeType fromTokVariableTypeToASTNodeType(TokenType type) {
+ASTNodeType fromTokVariableTypeToASTNodeType(LexerTokenType type) {
     switch (type) {
         case TOK_VARIABLE_TYPE_INT: return AST_NUMBER;
         case TOK_VARIABLE_TYPE_STRING: return AST_TEXT;
@@ -234,7 +234,7 @@ ASTNode parseTypeLiteral() {
     // Verify if is function definition
     // VOID|TYPE functionName() ...
     if (currentToken().type == TOK_IDENTIFIER) {
-        return parseFunctionDefinition();
+        return parseFunctionDefinition( FUNC_VISIBILITY_PUBLIC );
     }
 
     Token toke = currentToken();
@@ -459,6 +459,58 @@ void *parseBody(ASTBlock *parent) {
             addASTNode(parent, node);
         }
 
+        if ( currentToken().type == TOK_CLASS ) {
+            nextPos();
+
+            Token name = currentToken();
+            evalExpectedToken( name, TOK_IDENTIFIER, "Expected a name for class ");
+            nextPos();
+
+            evalExpectedToken( currentToken(), TOK_BRACE_OPEN, "Expected { after class definition");
+
+            ASTNode classNode = (ASTNode){
+                .type = AST_CLASS,
+                .class = {
+                    .name = strdup( name.text),
+                    .functions = {
+                        .children = NULL,
+                        .capacity = 0,
+                        .count = 0,
+                    }
+                }
+            };
+
+            nextPos();
+            while ( !isEnd() && currentToken().type != TOK_BRACE_CLOSE ) {
+                if ( currentToken().type == TOK_PUBLIC || currentToken().type == TOK_PRIVATE ) {
+                    FunctionDefinitionVisibility visibility = FUNC_VISIBILITY_PUBLIC;
+                    if ( currentToken().type == TOK_PRIVATE ) {
+                        visibility = FUNC_VISIBILITY_PRIVATE;
+                    }
+
+                    nextPos();
+
+                    if ( !isVariableDefinition() ) {
+                        syntaxError("Expected a type for a function", currentToken());
+                    }
+                    nextPos();
+
+                    ASTNode node = parseFunctionDefinition(visibility);
+                    addASTNode( &classNode.class.functions, node);
+                }
+            }
+
+            if ( isEnd() ) {
+                syntaxError("expect } to close", beforeToken() );
+            }
+
+            evalExpectedToken( currentToken(), TOK_BRACE_CLOSE, "Expected } after class to end");
+            nextPos();
+
+            addASTNode(parent, classNode);
+        }
+
+
         if (currentToken().type == TOK_EOF) {
             return NULL;
         }
@@ -486,7 +538,7 @@ ASTNode getAST() {
 
     parseBody(&parent->block);
 
-    // parserPrintAST(parent);
+    parserPrintAST(parent);
 
     if (syntax_error_count > 0) {
         fprintf(stderr,

@@ -44,8 +44,16 @@ typedef enum {
     AST_VARIABLE_CAST, // call a var like: echo $varname;
     AST_VARIABLE_ASSIGNMENT,
 
+    AST_CLASS,
+
     AST_EOF // DECLARE END;
 } ASTNodeType;
+
+
+typedef enum {
+    FUNC_VISIBILITY_PUBLIC,
+    FUNC_VISIBILITY_PRIVATE,
+} FunctionDefinitionVisibility;
 
 typedef enum {
     VARIABLE_TYPE_STRING,
@@ -69,7 +77,7 @@ typedef struct {
 } ASTBlock;
 
 typedef struct {
-    TokenType operator;   // TOKEN_MINUS, TOKEN_PLUS, etc.
+    LexerTokenType operator;   // TOKEN_MINUS, TOKEN_PLUS, etc.
     struct ASTNode *operand;
 } ASTUnary;
 
@@ -89,10 +97,13 @@ typedef struct {
     ASTBlock body;
 } ASTLoopWhile;
 
-
+typedef struct {
+    char *name;
+    ASTBlock functions;
+} ASTClass;
 
 typedef struct {
-    TokenType operator;      // TOK_LESS_THAN, TOK_EQUAL_EQUAL, etc.
+    LexerTokenType operator;      // TOK_LESS_THAN, TOK_EQUAL_EQUAL, etc.
     struct ASTNode *left;
     struct ASTNode *right;
 } ASTCompare;
@@ -165,6 +176,8 @@ typedef struct ASTNode {
          * ------------------------- */
         ASTBlock block;
 
+        ASTClass class;
+
         /* -------------------------
          * Function call
          * ------------------------- */
@@ -180,6 +193,7 @@ typedef struct ASTNode {
             char *name;
             ASTFunctionArguments arguments;
             ASTBlock body;
+            FunctionDefinitionVisibility visibility;
         } funcDefinition;
 
         /* -------------------------
@@ -235,7 +249,7 @@ ASTNode parseTypeLiteral();
 
 ASTNode *parseExpression(int deep );
 
-ASTNode parseFunctionDefinition();
+ASTNode parseFunctionDefinition(FunctionDefinitionVisibility visibility);
 
 void parseFunctionArguments( ASTFunctionArguments *arguments  );
 

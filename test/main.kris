@@ -1,18 +1,13 @@
-// ===============================
-// AVERAGE CALCULATOR
-// ===============================
-print("-- AVERAGE CALCULATOR --");
+CLASS Math
+{
 
-INT $numcount = input("How many numbers? ", INT);
-INT $total = 0;
-INT $inputval = 0;
+    PUBLIC VOID sum( INT $a, INT $b )
+    {
+        RETURN $a + $b;
+    }
 
-FOR ($avgi; $avgi < $numcount) {
-    $inputval = input("Enter number: ", INT);
-    $total = $total + $inputval;
+    PRIVATE VOID no( INT $a, INT $b )
+    {
+        RETURN $a + $b;
+    }
 }
-
-FLOAT $average = $total / $numcount;
-print("Average: " + $average);
-
-print("===== FOR LOOP TEST END =====");

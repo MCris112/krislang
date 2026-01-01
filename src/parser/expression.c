@@ -11,7 +11,7 @@
 #include "../helpers/helper.h"
 
 
-int getPrecedence(TokenType type) {
+int getPrecedence(LexerTokenType type) {
     switch (type) {
         case TOK_MULTIPLY:
         case TOK_DIVIDE:
@@ -96,13 +96,14 @@ void parserAddFunctionArgument(ASTFunctionArguments *arguments, ASTNode *arg) {
     arguments->children[arguments->count++] = arg;
 }
 
-ASTNode parseFunctionDefinition() {
+ASTNode parseFunctionDefinition(FunctionDefinitionVisibility visibility) {
     ASTNode node = (ASTNode){
         .type = AST_FUNCTION_DEFINITION,
         .funcDefinition = {
             .body = NULL,
             .name = strdup(currentToken().text),
-            .arguments = (ASTFunctionArguments){0}
+            .arguments = (ASTFunctionArguments){0},
+            .visibility = visibility,
         }
     };
 

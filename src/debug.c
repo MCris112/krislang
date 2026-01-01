@@ -11,7 +11,7 @@
 // LEXER
 //
 //------------------------------------
-const char *lexerTokenToString(TokenType type) {
+const char *lexerTokenToString(LexerTokenType type) {
     switch (type) {
         case TOK_EOF: return "TOK_EOF";
         case TOK_ERROR: return "TOK_ERROR";
@@ -111,106 +111,151 @@ void lexerPrintTokens(const Token *tokens, int count) {
 //
 //------------------------------------
 
-static void printIndent(int indent) {
+
+// Helper function to convert token type to string
+const char* tokenTypeToString(LexerTokenType type) {
+    switch (type) {
+        case TOK_EQUAL_EQUAL: return "==";
+        case TOK_NOT_EQUAL: return "!=";
+        case TOK_LESS_THAN: return "<";
+        case TOK_LESS_EQUAL: return "<=";
+        case TOK_GREATER_THAN: return ">";
+        case TOK_GREATER_EQUAL: return ">=";
+        case TOK_PLUS: return "+";
+        case TOK_MINUS: return "-";
+        case TOK_MULTIPLY: return "*";
+        case TOK_DIVIDE: return "/";
+        case TOK_MODULO: return "%";
+        default: return "?";
+    }
+}
+
+void printIndent(int indent) {
     for (int i = 0; i < indent; i++) {
         printf("  ");
     }
 }
 
-static void printNodeHeader(ASTNode *node, int indent) {
+void printNodeHeader(ASTNode *node, int indent) {
     printIndent(indent);
-    printf("%s", astNodeTypeToString(node->type));
 
     switch (node->type) {
-
-        case AST_TEXT:
-            printf(" \"%s\"", node->text);
+        case AST_PROGRAM:
+            printf("┌─ PROGRAM\n");
             break;
-
-        case AST_NUMBER:
-            printf(" %d", node->number);
+        case AST_BLOCK:
+            printf("┌─ BLOCK (%d statements)\n", node->block.count);
             break;
-
-        case AST_NUMBER_DECIMAL:
-            printf(" %f", node->decimal);
-            break;
-
-        case AST_BOOLEAN:
-            printf(" %s", node->boolean ? "TRUE" : "FALSE");
-            break;
-
-        case AST_CHAR:
-            printf(" '%c'", node->character);
-            break;
-
         case AST_VARIABLE_DEFINITION:
-            printf(" %s", node->varDecl.name);
-            break;
-
-        case AST_VARIABLE_ASSIGNMENT:
-            printf(" %s", node->variableAssignment.name);
-            break;
-
-        case AST_VARIABLE_CAST:
-            printf(" %s", node->text);
-            break;
-
-        case AST_FUNCTION_CALL:
-            printf(" %s()", node->funcCall.name);
-            break;
-
-        case AST_FUNCTION_DEFINITION:
-            printf(" %s()", node->funcDefinition.name);
-            break;
-
-        case AST_FUNCTION_PARAMETER:
-            printf(" %s %s",
+            printf("┌─ VAR_DEF: %s %s (size: %d)\n",
                    parserVarTypeToString(node->varDecl.varType),
-                   node->varDecl.name);
+                   node->varDecl.name,
+                   node->varDecl.size);
             break;
-
+        case AST_VARIABLE_ASSIGNMENT:
+            printf("┌─ VAR_ASSIGN: %s\n", node->variableAssignment.name);
+            break;
+        case AST_VARIABLE_CAST:
+            printf("└─ VAR_CAST: %s\n", node->text);
+            break;
+        case AST_RETURN:
+            printf("┌─ RETURN\n");
+            break;
+        case AST_CONCAT:
+            printf("┌─ CONCAT (+)\n");
+            break;
+        case AST_SUBTRACT:
+            printf("┌─ SUBTRACT (-)\n");
+            break;
+        case AST_MULTIPLY:
+            printf("┌─ MULTIPLY (*)\n");
+            break;
+        case AST_DIVIDE:
+            printf("┌─ DIVIDE (/)\n");
+            break;
+        case AST_MODULO:
+            printf("┌─ MODULO (%%)\n");
+            break;
+        case AST_COMPARE:
+            printf("┌─ COMPARE (%s)\n", tokenTypeToString(node->compare.operator));
+            break;
+        case AST_UNARY:
+            printf("┌─ UNARY (%s)\n", tokenTypeToString(node->unary.operator));
+            break;
         case AST_TYPE_LITERAL:
-            printf(" %s (size=%d)",
+            printf("└─ TYPE: %s (size: %d)\n",
                    astNodeTypeToString(node->literal.type),
                    node->literal.size);
             break;
-
+        case AST_NUMBER:
+            printf("└─ INT: %d\n", node->number);
+            break;
+        case AST_NUMBER_DECIMAL:
+            printf("└─ FLOAT: %.2f\n", node->decimal);
+            break;
+        case AST_TEXT:
+            printf("└─ STRING: \"%s\"\n", node->text);
+            break;
+        case AST_CHAR:
+            printf("└─ CHAR: '%c'\n", node->character);
+            break;
+        case AST_BOOLEAN:
+            printf("└─ BOOL: %s\n", node->boolean ? "TRUE" : "FALSE");
+            break;
+        case AST_VOID:
+            printf("└─ VOID\n");
+            break;
+        case AST_FUNCTION_CALL:
+            printf("┌─ FUNC_CALL: %s (%d args)\n",
+                   node->funcCall.name,
+                   node->funcCall.arguments.count);
+            break;
+        case AST_FUNCTION_DEFINITION:
+            printf("┌─ FUNC_DEF: %s (%d params, %d statements)\n",
+                   node->funcDefinition.name,
+                   node->funcDefinition.arguments.count,
+                   node->funcDefinition.body.count);
+            break;
+        case AST_FUNCTION_PARAMETER:
+            printf("└─ PARAM: %s %s (size: %d)\n",
+                   parserVarTypeToString(node->varDecl.varType),
+                   node->varDecl.name,
+                   node->varDecl.size);
+            break;
         case AST_LOGICAL_IF:
-            printf(" [body=%d else=%d]",
+            printf("┌─ IF (%d body, %d else)\n",
                    node->logicalIf.bodyBlock.count,
                    node->logicalIf.elseBlock.count);
             break;
-
         case AST_LOOP_WHILE:
-            printf(" [body=%d]", node->loopWhile.body.count);
+            printf("┌─ WHILE (%d statements)\n", node->loopWhile.body.count);
             break;
-
-        case AST_COMPARE:
-            printf(" (%s)", lexerTokenToString(node->compare.operator));
+        case AST_LOOP_FOR:
+            printf("┌─ FOR: $%s (%d statements)\n",
+                   node->loopFor.param.name,
+                   node->loopFor.body.count);
             break;
-
-        case AST_UNARY:
-            printf(" (%s)", lexerTokenToString(node->unary.operator));
+        case AST_CLASS:
+            printf("┌─ CLASS: %s (%d functions)\n",
+                   node->class.name,
+                   node->class.functions.count);
             break;
-
         default:
+            printf("┌─ UNKNOWN (%d) [%s]\n", node->type, astNodeTypeToString(node->type));
             break;
     }
-
-    printf("\n");
 }
 
 void parserPrintASTNode(ASTNode *node, int indent) {
     if (!node) {
         printIndent(indent);
-        printf("<NULL>\n");
+        printf("└─ <NULL>\n");
         return;
     }
 
     printNodeHeader(node, indent);
 
     switch (node->type) {
-
         case AST_PROGRAM:
         case AST_BLOCK:
             for (int i = 0; i < node->block.count; i++) {
@@ -219,15 +264,27 @@ void parserPrintASTNode(ASTNode *node, int indent) {
             break;
 
         case AST_VARIABLE_DEFINITION:
-            parserPrintASTNode(node->varDecl.value, indent + 1);
+        case AST_FUNCTION_PARAMETER:
+            // Function parameters may not have values
+            if (node->varDecl.value) {
+                printIndent(indent + 1);
+                printf("└─ VALUE:\n");
+                parserPrintASTNode(node->varDecl.value, indent + 2);
+            }
             break;
 
         case AST_VARIABLE_ASSIGNMENT:
-            parserPrintASTNode(node->variableAssignment.value, indent + 1);
+            printIndent(indent + 1);
+            printf("└─ VALUE:\n");
+            parserPrintASTNode(node->variableAssignment.value, indent + 2);
             break;
 
         case AST_RETURN:
-            parserPrintASTNode(node->child, indent + 1);
+            if (node->child) {
+                printIndent(indent + 1);
+                printf("└─ VALUE:\n");
+                parserPrintASTNode(node->child, indent + 2);
+            }
             break;
 
         case AST_CONCAT:
@@ -235,34 +292,54 @@ void parserPrintASTNode(ASTNode *node, int indent) {
         case AST_MULTIPLY:
         case AST_DIVIDE:
         case AST_MODULO:
-            parserPrintASTNode(node->binary.left, indent + 1);
-            parserPrintASTNode(node->binary.right, indent + 1);
+            printIndent(indent + 1);
+            printf("├─ LEFT:\n");
+            parserPrintASTNode(node->binary.left, indent + 2);
+            printIndent(indent + 1);
+            printf("└─ RIGHT:\n");
+            parserPrintASTNode(node->binary.right, indent + 2);
             break;
 
         case AST_COMPARE:
-            parserPrintASTNode(node->compare.left, indent + 1);
-            parserPrintASTNode(node->compare.right, indent + 1);
+            printIndent(indent + 1);
+            printf("├─ LEFT:\n");
+            parserPrintASTNode(node->compare.left, indent + 2);
+            printIndent(indent + 1);
+            printf("└─ RIGHT:\n");
+            parserPrintASTNode(node->compare.right, indent + 2);
             break;
 
         case AST_UNARY:
-            parserPrintASTNode(node->unary.operand, indent + 1);
+            printIndent(indent + 1);
+            printf("└─ OPERAND:\n");
+            parserPrintASTNode(node->unary.operand, indent + 2);
             break;
 
         case AST_FUNCTION_CALL:
-            for (int i = 0; i < node->funcCall.arguments.count; i++) {
-                parserPrintASTNode(node->funcCall.arguments.children[i], indent + 1);
+            if (node->funcCall.arguments.count > 0) {
+                printIndent(indent + 1);
+                printf("└─ ARGS:\n");
+                for (int i = 0; i < node->funcCall.arguments.count; i++) {
+                    printIndent(indent + 2);
+                    printf("[%d]:\n", i);
+                    parserPrintASTNode(node->funcCall.arguments.children[i], indent + 3);
+                }
             }
             break;
 
         case AST_FUNCTION_DEFINITION:
-            printIndent(indent + 1);
-            printf("ARGS:\n");
-            for (int i = 0; i < node->funcDefinition.arguments.count; i++) {
-                parserPrintASTNode(node->funcDefinition.arguments.children[i], indent + 2);
+            if (node->funcDefinition.arguments.count > 0) {
+                printIndent(indent + 1);
+                printf("├─ PARAMS:\n");
+                for (int i = 0; i < node->funcDefinition.arguments.count; i++) {
+                    printIndent(indent + 2);
+                    printf("[%d]:\n", i);
+                    parserPrintASTNode(node->funcDefinition.arguments.children[i], indent + 3);
+                }
             }
 
             printIndent(indent + 1);
-            printf("BODY:\n");
+            printf("└─ BODY:\n");
             for (int i = 0; i < node->funcDefinition.body.count; i++) {
                 parserPrintASTNode(node->funcDefinition.body.children[i], indent + 2);
             }
@@ -270,18 +347,18 @@ void parserPrintASTNode(ASTNode *node, int indent) {
 
         case AST_LOGICAL_IF:
             printIndent(indent + 1);
-            printf("CONDITION:\n");
+            printf("├─ CONDITION:\n");
             parserPrintASTNode(node->logicalIf.conditional, indent + 2);
 
             printIndent(indent + 1);
-            printf("BODY:\n");
+            printf("├─ THEN:\n");
             for (int i = 0; i < node->logicalIf.bodyBlock.count; i++) {
                 parserPrintASTNode(node->logicalIf.bodyBlock.children[i], indent + 2);
             }
 
             if (node->logicalIf.elseBlock.count > 0) {
                 printIndent(indent + 1);
-                printf("ELSE:\n");
+                printf("└─ ELSE:\n");
                 for (int i = 0; i < node->logicalIf.elseBlock.count; i++) {
                     parserPrintASTNode(node->logicalIf.elseBlock.children[i], indent + 2);
                 }
@@ -290,42 +367,69 @@ void parserPrintASTNode(ASTNode *node, int indent) {
 
         case AST_LOOP_WHILE:
             printIndent(indent + 1);
-            printf("CONDITION:\n");
+            printf("├─ CONDITION:\n");
             parserPrintASTNode(node->loopWhile.condition, indent + 2);
 
             printIndent(indent + 1);
-            printf("BODY:\n");
+            printf("└─ BODY:\n");
             for (int i = 0; i < node->loopWhile.body.count; i++) {
                 parserPrintASTNode(node->loopWhile.body.children[i], indent + 2);
             }
             break;
+
         case AST_LOOP_FOR:
             printIndent(indent + 1);
-            printf("Var definition (%s):\n", node->loopFor.param.name);
-            printIndent(indent + 1);
-            printf("CONDITION:\n");
-            parserPrintASTNode(node->loopFor.condition, indent + 2);
-            printIndent(indent + 1);
+            printf("├─ INIT: $%s\n", node->loopFor.param.name);
 
             printIndent(indent + 1);
-            printf("BODY:\n");
+            printf("├─ CONDITION:\n");
+            parserPrintASTNode(node->loopFor.condition, indent + 2);
+
+            printIndent(indent + 1);
+            printf("└─ BODY:\n");
             for (int i = 0; i < node->loopFor.body.count; i++) {
                 parserPrintASTNode(node->loopFor.body.children[i], indent + 2);
             }
             break;
 
+        case AST_CLASS:
+            printIndent(indent + 1);
+            printf("└─ FUNCTIONS:\n");
+            for (int i = 0; i < node->class.functions.count; i++) {
+                printIndent(indent + 2);
+                printf("[%d]:\n", i);
+                parserPrintASTNode(node->class.functions.children[i], indent + 3);
+            }
+            break;
+
+        // Leaf nodes - no children to traverse
+        case AST_TYPE_LITERAL:
+        case AST_VARIABLE_CAST:
+        case AST_NUMBER:
+        case AST_NUMBER_DECIMAL:
+        case AST_TEXT:
+        case AST_CHAR:
+        case AST_BOOLEAN:
+        case AST_VOID:
+            break;
+
         default:
+            printIndent(indent + 1);
+            printf("└─ <unhandled type: %d [%s]>\n", node->type, astNodeTypeToString(node->type));
             break;
     }
 }
 
 void parserPrintAST(ASTNode *root) {
-    printf("\n=== AST ===\n");
+    printf("\n");
+    printf("╔════════════════════════════════════════╗\n");
+    printf("║          ABSTRACT SYNTAX TREE          ║\n");
+    printf("╚════════════════════════════════════════╝\n");
+    printf("\n");
     parserPrintASTNode(root, 0);
-    printf("===========\n");
+    printf("\n");
+    printf("════════════════════════════════════════\n");
 }
-
-
 
 char *parserVarTypeToString(VarType type) {
     switch (type) {
@@ -407,6 +511,8 @@ char *astNodeTypeToString(ASTNodeType type) {
         case AST_MULTIPLY: return "AST_MULTIPLY";
         case AST_DIVIDE: return "AST_DIVIDE";
         case AST_MODULO: return "AST_MODULO";
+
+        case AST_CLASS: return "AST_CLASS";
 
         case AST_VARIABLE_DEFINITION: return "AST_VARIABLE_DEFINITION";
         case AST_VARIABLE_CAST: return "AST_VARIABLE_CAST";

@@ -13,7 +13,7 @@
 // LEXER
 //
 //------------------------------------
-const char *lexerTokenToString(TokenType type);
+const char *lexerTokenToString(LexerTokenType type);
 
 void lexerPrintSingleToken(const Token *tok);
 

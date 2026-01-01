@@ -15,6 +15,12 @@
 
 EnvValue *envValueInt(int v) {
     EnvValue *val = malloc(sizeof(EnvValue));
+
+    if (!val) {
+        perror("malloc");
+        exit(EXIT_FAILURE);
+    }
+
     val->type = ENV_INT;
     val->number = v;
     return val;
@@ -22,6 +28,12 @@ EnvValue *envValueInt(int v) {
 
 EnvValue *envValueString(const char *s) {
     EnvValue *val = malloc(sizeof(EnvValue));
+
+    if (!val) {
+        perror("malloc");
+        exit(EXIT_FAILURE);
+    }
+
     val->type = ENV_STRING;
     val->text = strdup(s);
     return val;
@@ -29,6 +41,12 @@ EnvValue *envValueString(const char *s) {
 
 EnvValue *envValueFloat(double v) {
     EnvValue *val = malloc(sizeof(EnvValue));
+
+    if (!val) {
+        perror("malloc");
+        exit(EXIT_FAILURE);
+    }
+
     val->type = ENV_FLOAT;
     val->decimal = v;
     return val;
@@ -36,6 +54,12 @@ EnvValue *envValueFloat(double v) {
 
 EnvValue *envValueBoolean(bool v) {
     EnvValue *val = malloc(sizeof(EnvValue));
+
+    if (!val) {
+        perror("malloc");
+        exit(EXIT_FAILURE);
+    }
+
     val->type = ENV_BOOL;
     val->boolean = v;
     return val;
@@ -43,6 +67,12 @@ EnvValue *envValueBoolean(bool v) {
 
 EnvValue *envValueCharacter(char v) {
     EnvValue *val = malloc(sizeof(EnvValue));
+
+    if (!val) {
+        perror("malloc");
+        exit(EXIT_FAILURE);
+    }
+
     val->type = ENV_CHAR;
     val->character = v;
     return val;
@@ -50,12 +80,24 @@ EnvValue *envValueCharacter(char v) {
 
 EnvValue *envValueNull() {
     EnvValue *val = malloc(sizeof(EnvValue));
+
+    if (!val) {
+        perror("malloc");
+        exit(EXIT_FAILURE);
+    }
+
     val->type = ENV_NULL;
     return val;
 }
 
 EnvValue *envValueVoid(char *name) {
     EnvValue *val = malloc(sizeof(EnvValue));
+
+    if (!val) {
+        perror("malloc");
+        exit(EXIT_FAILURE);
+    }
+
     val->type = ENV_VOID;
     val->text = name;
     return val;

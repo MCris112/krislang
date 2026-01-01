@@ -12,42 +12,38 @@
 void parseNodeIf(ASTBlock *parent) {
     nextPos(); // Skip TOK_LOGICAL_IF
 
-    ASTNode *nodeIf = malloc(sizeof(ASTNode));
-    nodeIf->type = AST_LOGICAL_IF;
+    ASTNode nodeIf = {0};
+    nodeIf.type = AST_LOGICAL_IF;
     // ALWAYS initialize both blocks
-    nodeIf->logicalIf.bodyBlock = (ASTBlock){.children = NULL, .count = 0, .capacity = 0};
-    nodeIf->logicalIf.elseBlock = (ASTBlock){.children = NULL, .count = 0, .capacity = 0};
+    nodeIf.logicalIf.bodyBlock = (ASTBlock){.children = NULL, .count = 0, .capacity = 0};
+    nodeIf.logicalIf.elseBlock = (ASTBlock){.children = NULL, .count = 0, .capacity = 0};
 
     if (currentToken().type != TOK_PARENTHESIS_OPEN) {
         syntaxError("Expected '(' to start if", beforeToken() );
-        return;
     }
 
     nextPos();
 
     ASTNode *expression = parseExpression(0);
 
-    nodeIf->logicalIf.conditional = expression;
+    nodeIf.logicalIf.conditional = expression;
 
     if (currentToken().type != TOK_PARENTHESIS_CLOSE) {
         syntaxError("Expected ')' after expression", currentToken());
-        return;
     }
 
     nextPos(); // Skip ')'
 
     if (currentToken().type != TOK_BRACE_OPEN) {
         syntaxError("Expected '{' after expression", currentToken());
-        return;
     }
 
     nextPos(); // Skipp {
 
-    parseBody(&nodeIf->logicalIf.bodyBlock);
+    parseBody(&nodeIf.logicalIf.bodyBlock);
 
     if (currentToken().type != TOK_BRACE_CLOSE) {
         syntaxError("Expected '}' after body content", currentToken());
-        return;
     }
 
     nextPos(); // Skipp }
@@ -56,28 +52,25 @@ void parseNodeIf(ASTBlock *parent) {
         nextPos();
 
         if ( currentToken().type == TOK_LOGICAL_IF ) {
-            parseNodeIf( &nodeIf->logicalIf.elseBlock );
-            addASTNode(parent, *nodeIf);
+            parseNodeIf( &nodeIf.logicalIf.elseBlock );
+            addASTNode(parent, nodeIf);
             return;
         }
         if (currentToken().type != TOK_BRACE_OPEN) {
             syntaxError("Expected '{' after expression", currentToken());
-            return;
         }
 
         nextPos(); // Skipp {
 
-        parseBody(&nodeIf->logicalIf.elseBlock);
-        // parseBody( &blockElse );
+        parseBody(&nodeIf.logicalIf.elseBlock);
 
         if (currentToken().type != TOK_BRACE_CLOSE) {
             syntaxError("Expected '}' after body content", currentToken());
-            return;
         }
 
         nextPos(); // Skipp }
 
     }
 
-    addASTNode(parent, *nodeIf);
+    addASTNode(parent, nodeIf);
 }

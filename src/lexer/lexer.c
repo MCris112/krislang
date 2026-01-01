@@ -9,8 +9,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
-#include "../debug.h"
+#include <errno.h>
 
 // For error lines
 int currentLine = 0;
@@ -109,6 +108,14 @@ const char *getCode() {
     return code;
 }
 
+
+bool validateWord( const char *pos, char *word ) {
+    size_t len = strlen(word);
+
+    if ( strncmp(pos, word, len) == 0 && !isalnum(pos[len])  && pos[len] != '_' )
+        return true;
+    return false;
+}
 /**
  * Main important component of compiler, take actual text into TOKENS
  * @param input
@@ -313,7 +320,7 @@ void parseLexer(const char *input) {
         //---------------------------
         // Parse TRUE | FALSE
         //---------------------------
-        if (strncmp(pos, "TRUE", 4) == 0 && !isalnum(pos[4])) {
+        if (validateWord( pos, "TRUE")) {
             addToken((Token){
                 .type = TOK_LITERAL_BOOLEAN,
                 .boolean = true,
@@ -326,7 +333,7 @@ void parseLexer(const char *input) {
             continue;
         }
 
-        if (strncmp(pos, "FALSE", 5) == 0 && !isalnum(pos[5])) {
+        if ( validateWord( pos, "FALSE") ) {
             addToken((Token){
                 .type = TOK_LITERAL_BOOLEAN,
                 .boolean = false,
@@ -425,7 +432,7 @@ void parseLexer(const char *input) {
         //---------------------------
         int startColumn = currentColumn;
 
-        if (strncmp(pos, "RETURN", 6) == 0) {
+        if ( validateWord( pos, "RETURN") ) {
             addToken((Token){
                 .type = TOK_RETURN,
                 .line = currentLine,
@@ -437,7 +444,7 @@ void parseLexer(const char *input) {
             continue;
         }
 
-        if (strncmp(pos, "WHILE", 5) == 0) {
+        if ( validateWord( pos, "WHILE") ) {
             addToken((Token){
                 .type = TOK_LOOP_WHILE,
                 .line = currentLine,
@@ -449,7 +456,7 @@ void parseLexer(const char *input) {
             continue;
         }
 
-        if (strncmp(pos, "FOR", 3) == 0) {
+        if ( validateWord( pos, "FOR") ) {
             addToken((Token){
                 .type = TOK_LOOP_FOR,
                 .line = currentLine,
@@ -474,7 +481,7 @@ void parseLexer(const char *input) {
         //---------------------------
         // Logical
         //---------------------------
-        if (strncmp(pos, "IF", 2) == 0) {
+        if ( validateWord( pos, "IF") ) {
             addToken((Token){
                 .type = TOK_LOGICAL_IF,
                 .line = currentLine,
@@ -482,10 +489,11 @@ void parseLexer(const char *input) {
             });
 
             pos += 2;
+            currentColumn += 2;
             continue;
         }
 
-        if (strncmp(pos, "ELSE", 4) == 0) {
+        if ( validateWord( pos, "ELSE") ) {
             addToken((Token){
                 .type = TOK_LOGICAL_ELSE,
                 .line = currentLine,
@@ -493,6 +501,7 @@ void parseLexer(const char *input) {
             });
 
             pos += 4;
+            currentColumn += 2;
             continue;
         }
         if (evalTokenText(&pos, "&&", TOK_LOGICAL_AND)) continue;
@@ -622,6 +631,7 @@ void parseLexer(const char *input) {
                 pos++;
 
             size_t length = pos - start;
+
             char *text = malloc(length + 1);
             if (!text) {
                 perror("malloc");
@@ -633,10 +643,24 @@ void parseLexer(const char *input) {
 
             addToken((Token){
                 .type = TOK_IDENTIFIER,
-                .text = strdup(text),
+                .text = text,
+                .line = currentLine,
+                .column = currentColumn
             });
             continue;
         }
+
+        // Fixed:
+        char *errorChar = malloc(2);
+        errorChar[0] = *pos;
+        errorChar[1] = '\0';
+
+        addToken((Token){
+            .type = TOK_ERROR,
+            .text = errorChar,
+            .line = currentLine,
+            .column = currentColumn
+        });
 
         pos++;
         currentColumn++;
@@ -646,3 +670,20 @@ void parseLexer(const char *input) {
 
     // lexerPrintTokens(tokens, tokenCount);
 }
+
+void freeLexer(void) {
+    for (int i = 0; i < tokenCount; i++) {
+        if (tokens[i].text &&
+            tokens[i].type != TOK_VARIABLE_TYPE_INT &&  // static strings
+            tokens[i].type != TOK_VARIABLE_TYPE_STRING &&
+            // ... other type keywords with static text
+            tokens[i].type != TOK_SEMICOLON) {
+            free(tokens[i].text);
+            }
+    }
+    free(tokens);
+    tokens = NULL;
+    tokenCount = 0;
+    capacity = 0;
+}
+

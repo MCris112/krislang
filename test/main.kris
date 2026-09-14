@@ -1,4 +1,4 @@
-CLASS Math
+/* CLASS Math
 {
 
     PUBLIC VOID sum( INT $a, INT $b )
@@ -10,4 +10,8 @@ CLASS Math
     {
         RETURN $a + $b;
     }
-}
+} */
+
+INT $num = 1;
+
+$num = 3;
